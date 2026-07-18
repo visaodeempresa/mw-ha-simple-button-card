@@ -15,3 +15,9 @@
 
 ### Pendente
 - Merge do PR (dono) → auto-release gera v0.1.x → instalar via HACS → testar.
+
+## 2026-07-17 — animate + control (no PR #1, pré-merge)
+- `animate` (default false): ícone gira (sbc-spin 1.2s, translateZ/backface,
+  padrão do exaustor do dono) quando ligado.
+- `control` (default true): false = toque não alterna (cursor default);
+  hold/more-info segue. Editor: 2 booleans novos. Total: 13 propriedades.

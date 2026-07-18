@@ -39,6 +39,8 @@ cards:
 | `color_off_bg` | cor | `rgba(0,0,0,0.45)` | fundo desligado |
 | `color_on_border` / `color_off_border` | cor | (tema papel) | bordas |
 | `color_unavail` | cor | `#f5c518` | destaque indisponível |
+| `animate` | bool | `false` | gira o ícone quando ligado (ex.: exaustor) |
+| `control` | bool | `true` | `false` = toque não liga/desliga (hold segue funcionando) |
 
 Cores no editor: picker visual (cor + transparência). Releases automáticas:
 merge na main → bump semântico → tag → HACS notifica.

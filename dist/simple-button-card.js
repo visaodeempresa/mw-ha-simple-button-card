@@ -12,6 +12,8 @@
     icon_on: "",
     icon_off: "mdi:lightbulb-off",
     icon_unavailable: "mdi:cancel",
+    animate: false,
+    control: true,
     color_on_name: "#1a1a1a",
     color_off_name: "rgba(255, 255, 255, 0.78)",
     color_off_bg: "rgba(0, 0, 0, 0.45)",
@@ -77,6 +79,10 @@
           ? "drop-shadow(1px 2px 2px rgba(0,0,0,0.55)) drop-shadow(3px 6px 8px rgba(0,0,0,0.30)) drop-shadow(6px 12px 16px rgba(0,0,0,0.15))"
           : "none";
 
+      // animate: gira o ícone quando ligado (padrão fan-spin do dono)
+      const spin = c.animate && isOn ? "animation:sbc-spin 1.2s linear infinite;" : "";
+      const canControl = c.control !== false;
+
       const nameColor = dead ? c.color_unavail : isOn ? c.color_on_name : c.color_off_name;
       const nameDeco = dead ? "line-through" : "none";
       const nameShadow = dead
@@ -86,15 +92,18 @@
       if (!this.shadowRoot) this.attachShadow({ mode: "open" });
       this.shadowRoot.innerHTML = `
         <style>
+          @keyframes sbc-spin{from{transform:rotate(0deg) translateZ(0);}to{transform:rotate(360deg) translateZ(0);}}
           ha-card{aspect-ratio:1/1;border-radius:12px;background:${bg};border:1px solid ${border};
-            box-shadow:${shadow};font-size:11px;font-weight:600;cursor:pointer;
+            box-shadow:${shadow};font-size:11px;font-weight:600;cursor:${canControl ? "pointer" : "default"};
             display:flex;flex-direction:column;align-items:center;justify-content:center;
             -webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;
             transition:background .2s ease,box-shadow .2s ease;height:100%;box-sizing:border-box;}
           .ic{flex:0 0 auto;display:flex;align-items:center;justify-content:center;
             --mdc-icon-size:40%;width:100%;height:55%;}
           .ic ha-icon{--mdc-icon-size:38px;width:38px;height:38px;color:${iconColor};
-            filter:${iconFilter};display:flex;transition:color .2s ease;}
+            filter:${iconFilter};display:flex;transition:color .2s ease;
+            ${spin}transform-origin:center center;backface-visibility:hidden;
+            will-change:${c.animate && isOn ? "transform" : "auto"};}
           .nm{font-size:11px;font-weight:600;padding-bottom:8px;color:${nameColor};
             text-decoration:${nameDeco};text-shadow:${nameShadow};text-align:center;
             text-transform:uppercase;letter-spacing:.02em;max-width:92%;
@@ -120,7 +129,7 @@
         card.addEventListener(t, () => { if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; } }));
       card.addEventListener("pointerup", () => {
         if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
-        if (!held && !dead) this._hass.callService("homeassistant", "toggle", { entity_id: c.entity });
+        if (!held && !dead && canControl) this._hass.callService("homeassistant", "toggle", { entity_id: c.entity });
       });
     }
   }
@@ -133,6 +142,8 @@
     icon_on: "Ícone (ligado)",
     icon_off: "Ícone (desligado)",
     icon_unavailable: "Ícone (indisponível)",
+    animate: "Animar ícone quando ligado (girar)",
+    control: "Permitir ligar/desligar no toque",
     color_on_name: "Ligado: texto/ícone",
     color_off_name: "Desligado: texto",
     color_off_bg: "Desligado: fundo",
@@ -169,6 +180,8 @@
         { name: "icon_on", selector: { icon: {} } },
         { name: "icon_off", selector: { icon: {} } },
         { name: "icon_unavailable", selector: { icon: {} } },
+        { name: "animate", selector: { boolean: {} } },
+        { name: "control", selector: { boolean: {} } },
       ];
     }
 
