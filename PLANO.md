@@ -23,9 +23,9 @@ Cores = seção com picker visual (cor+alfa), como no power-button-card v0.1.1.
 
 ## Checklist (status vivo)
 - [x] Pasta + git + workflows adaptados (auto-release + fallback) + plano
-- [ ] dist/simple-button-card.js (card + editor)
-- [ ] hacs.json + README + HISTORICO
-- [ ] Repo público + feature branch + PR
+- [x] dist/simple-button-card.js (card + editor)
+- [x] hacs.json + README + HISTORICO
+- [x] Repo público + feature branch + PR #1
 - [ ] Merge (dono) → auto-release v0.x → instalar via HACS → testar
 
 ## Retomada manual
