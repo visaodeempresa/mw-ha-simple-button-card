@@ -43,6 +43,8 @@ cards:
 | `control` | bool | `true` | `false` = toque não liga/desliga (hold segue funcionando); o ícone fica levemente menor e mais apagado, avisando que é só leitura |
 | `icon_shadow` | bool | `true` | sombra (relevo de papel) no ícone quando ligado; `false` deixa o ícone chapado — o brilho vermelho de *indisponível* continua, é sinal de estado |
 | `haptic` | bool | `true` | vibra ao encostar no botão (pulso curto no toque, mais forte quando o hold vira more-info); `false` desliga. No app companion (iOS/Android) usa o motor de vibração nativo; no navegador comum cai no `navigator.vibrate` — o Safari do iPhone não vibra fora do app |
+| `confirm` | bool | `false` | pergunta antes de ligar/desligar; o hold/more-info não pede nada |
+| `confirm_text` | texto | `Tem certeza que quer {acao} {nome}?` | mensagem da confirmação — `{nome}` vira o label (ou o `friendly_name`) e `{acao}` vira *ligar*/*desligar* conforme o estado |
 | `name_position` | `bottom`/`top`/`left`/`right` | `bottom` | posição do label em relação ao ícone |
 | `icon_size` | px | *(vazio)* | vazio = o ícone escala com o botão (igual ao `button-card`); com valor vira caixa fixa (`28`, `"2em"`, `"40%"`) |
 | `name_size` | px | `11` | tamanho do texto do label |

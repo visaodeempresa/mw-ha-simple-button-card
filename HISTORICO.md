@@ -1,5 +1,24 @@
 # HISTÓRICO — mw-ha-simple-button-card
 
+## 2026-07-31 — confirmação da ação (`confirm` / `confirm_text`)
+- `confirm` (default `false`) pergunta antes de ligar/desligar. O hold
+  (more-info) não pergunta nada: só leitura, não muda estado.
+- `confirm_text` já nasce sugerido: `Tem certeza que quer {acao} {nome}?` —
+  `{nome}` vira o label (ou `friendly_name`, ou a entidade) e `{acao}` vira
+  *ligar*/*desligar* conforme o estado do momento. No editor a mensagem só
+  aparece quando a confirmação está ligada (mesmo padrão do `hide_label`).
+- Diálogo próprio montado no `document.body`, **não** no shadow root: dentro
+  do card o `overflow:hidden` cortaria o modal. Também **não** usa
+  `window.confirm` — o WebView do companion pode engolir o diálogo nativo e
+  devolver `false` sozinho, e aí a ação nunca aconteceria. Fecha por
+  Confirmar/Cancelar, Esc, Enter ou clique no fundo; o texto entra por
+  `textContent`.
+- Papel/creme do próprio botão no diálogo, para não parecer peça de fora.
+- Código do `confirmAction` é idêntico ao do power-button-card — candidato a
+  virar bloco compartilhado em `IA/lib/`, como a paper-palette.
+- 21 propriedades. Probe em jsdom: 13 checks (com/sem confirmação, confirmar,
+  cancelar, Esc, texto do YAML, diálogo fora do shadow root).
+
 ## 2026-07-31 — feedback táctil no celular (`haptic`)
 - Causa do "não senti nada ao tocar": o card nunca emitia o evento `haptic` —
   `pointerdown`/`pointerup` só faziam toggle e more-info. Vibração no HA não é
