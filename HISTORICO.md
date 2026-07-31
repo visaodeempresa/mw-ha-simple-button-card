@@ -1,5 +1,21 @@
 # HISTÓRICO — mw-ha-simple-button-card
 
+## 2026-07-31 — feedback táctil no celular (`haptic`)
+- Causa do "não senti nada ao tocar": o card nunca emitia o evento `haptic` —
+  `pointerdown`/`pointerup` só faziam toggle e more-info. Vibração no HA não é
+  automática; quem quer vibrar pede.
+- `haptic` (default `true`): pulso `light` no **pointerdown** (o dedo tem que
+  sentir o botão no instante em que encosta, não depois de o serviço responder)
+  e `medium` quando o hold de 500 ms vira more-info.
+- Ponte: `window.dispatchEvent(new CustomEvent("haptic", {detail: tipo}))` — é
+  o mesmo canal que o frontend do HA usa para falar com o app companion.
+  **Fora** do companion (sem `window.externalApp` / `webkit.messageHandlers.
+  externalBus`) cai no `navigator.vibrate`; dentro, não — senão vibraria duas
+  vezes. Safari do iPhone não vibra em página nenhuma: lá só dentro do app.
+- Tudo dentro de `try/catch`: vibração é enfeite, não pode derrubar o toque.
+- 19 propriedades. Verificado com probe em jsdom (11 checks: tap, hold,
+  `haptic:false`, companion vs. navegador, entidade indisponível).
+
 ## 2026-07-31 — hide_label + paleta de papel (mesmo PR #2, pré-merge)
 - `hide_label`: grade vira `'i'` sozinha, ícone ocupa o botão inteiro, o `<div class="nm">`
   não é emitido e o editor esconde os campos de label (posição/tamanho/folga).
