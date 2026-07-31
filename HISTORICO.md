@@ -16,6 +16,25 @@
 ### Pendente
 - Merge do PR (dono) → auto-release gera v0.1.x → instalar via HACS → testar.
 
+## 2026-07-31 — v0.2.0: paridade visual com o button-card
+- CSS do `custom:button-card` (bundle servido pelo HA, `/hacsfiles/button-card/`)
+  lido e replicado: `ha-card{padding:4% 0;overflow:hidden;text-align:center}`,
+  container em grid vertical `'i' 'n'` com `grid-template-rows:1fr min-content`,
+  `#img-cell` flex/relative/overflow:hidden 100%×100% e ícone
+  `position:absolute; height/width:100%; --mdc-icon-size:100%`.
+  Antes o ícone era fixo em 38px numa faixa de 55% da altura — por isso o
+  botão não batia com os vizinhos. Agora o ícone escala com a célula, igual
+  ao irmão, em qualquer tamanho de grid.
+- Nome: sem `text-transform:uppercase`, sem `letter-spacing` e sem
+  nowrap/ellipsis — o button-card não faz nada disso (quebra linha igual).
+- `control: false`: ícone em `opacity:.6` + `scale(.88)` (escala no `.ic`, não
+  no `ha-icon`, senão brigaria com a animação de girar) — o botão avisa
+  sozinho que é só leitura.
+- `icon_shadow` (default `true`): desliga a sombra de papel do ícone ligado;
+  o glow vermelho de indisponível permanece (sinal de estado). 14 propriedades.
+- Deploy de teste por SSH em `/config/www/community/mw-ha-simple-button-card/`
+  (.js + .js.gz) — o HA serve o .gz quando existe, os dois precisam ir junto.
+
 ## 2026-07-17 — animate + control (no PR #1, pré-merge)
 - `animate` (default false): ícone gira (sbc-spin 1.2s, translateZ/backface,
   padrão do exaustor do dono) quando ligado.

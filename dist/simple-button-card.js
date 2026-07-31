@@ -14,6 +14,7 @@
     icon_unavailable: "mdi:cancel",
     animate: false,
     control: true,
+    icon_shadow: true,
     color_on_name: "#1a1a1a",
     color_off_name: "rgba(255, 255, 255, 0.78)",
     color_off_bg: "rgba(0, 0, 0, 0.45)",
@@ -73,15 +74,20 @@
         : (c.icon_on || st?.attributes?.icon || "mdi:lightbulb");
 
       const iconColor = dead ? c.color_unavail : isOn ? c.color_on_name : "rgba(255,255,255,0.70)";
+      // icon_shadow=false remove a sombra decorativa do ícone; o brilho vermelho
+      // de "indisponível" fica (é sinal de estado, não enfeite).
       const iconFilter = dead
         ? "drop-shadow(0 0 2px rgba(200,0,0,1.0)) drop-shadow(0 0 8px rgba(220,0,0,0.95)) drop-shadow(0 0 18px rgba(200,0,0,0.80)) drop-shadow(0 0 32px rgba(180,0,0,0.55))"
-        : isOn
+        : isOn && c.icon_shadow !== false
           ? "drop-shadow(1px 2px 2px rgba(0,0,0,0.55)) drop-shadow(3px 6px 8px rgba(0,0,0,0.30)) drop-shadow(6px 12px 16px rgba(0,0,0,0.15))"
           : "none";
 
       // animate: gira o ícone quando ligado (padrão fan-spin do dono)
       const spin = c.animate && isOn ? "animation:sbc-spin 1.2s linear infinite;" : "";
       const canControl = c.control !== false;
+      // control=false: ícone "só leitura" — um pouco menor e mais apagado,
+      // para o botão avisar sozinho que o toque não liga/desliga nada.
+      const readOnly = canControl ? "" : "opacity:.6;transform:scale(.88);";
 
       const nameColor = dead ? c.color_unavail : isOn ? c.color_on_name : c.color_off_name;
       const nameDeco = dead ? "line-through" : "none";
@@ -90,28 +96,40 @@
         : "none";
 
       if (!this.shadowRoot) this.attachShadow({ mode: "open" });
+      // Geometria copiada do custom:button-card (padding 4% 0, grid vertical
+      // 1fr/min-content, ícone escalando com a célula) para os dois botões
+      // ficarem idênticos lado a lado em qualquer tamanho de grid.
       this.shadowRoot.innerHTML = `
         <style>
           @keyframes sbc-spin{from{transform:rotate(0deg) translateZ(0);}to{transform:rotate(360deg) translateZ(0);}}
           ha-card{aspect-ratio:1/1;border-radius:12px;background:${bg};border:1px solid ${border};
-            box-shadow:${shadow};font-size:11px;font-weight:600;cursor:${canControl ? "pointer" : "default"};
+            box-shadow:${shadow};color:${nameColor};font-size:11px;font-weight:600;
+            cursor:${canControl ? "pointer" : "default"};
             display:flex;flex-direction:column;align-items:center;justify-content:center;
+            text-align:center;padding:4% 0;overflow:hidden;
             -webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;
-            transition:background .2s ease,box-shadow .2s ease;height:100%;box-sizing:border-box;}
-          .ic{flex:0 0 auto;display:flex;align-items:center;justify-content:center;
-            --mdc-icon-size:40%;width:100%;height:55%;}
-          .ic ha-icon{--mdc-icon-size:38px;width:38px;height:38px;color:${iconColor};
-            filter:${iconFilter};display:flex;transition:color .2s ease;
+            transition:background .2s ease,box-shadow .2s ease;height:100%;width:100%;box-sizing:border-box;}
+          .ct{display:grid;width:100%;height:100%;text-align:center;align-items:center;
+            grid-template-areas:'i' 'n';grid-template-columns:1fr;grid-template-rows:1fr min-content;}
+          .ic{grid-area:i;display:flex;position:relative;overflow:hidden;
+            height:100%;width:100%;max-width:100%;max-height:100%;
+            align-self:center;justify-self:center;align-items:center;justify-content:center;
+            ${readOnly}transition:opacity .2s ease,transform .2s ease;}
+          .ic ha-icon{display:inline-block;position:absolute;margin:auto;
+            height:100%;width:100%;max-height:100%;
+            --mdc-icon-size:100%;--iron-icon-width:100%;--iron-icon-height:100%;
+            color:${iconColor};filter:${iconFilter};transition:color .2s ease;
             ${spin}transform-origin:center center;backface-visibility:hidden;
             will-change:${c.animate && isOn ? "transform" : "auto"};}
-          .nm{font-size:11px;font-weight:600;padding-bottom:8px;color:${nameColor};
-            text-decoration:${nameDeco};text-shadow:${nameShadow};text-align:center;
-            text-transform:uppercase;letter-spacing:.02em;max-width:92%;
-            overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+          .nm{grid-area:n;max-width:100%;align-self:center;justify-self:center;
+            font-size:11px;font-weight:600;padding-bottom:8px;color:${nameColor};
+            text-decoration:${nameDeco};text-shadow:${nameShadow};}
         </style>
         <ha-card>
-          <div class="ic"><ha-icon icon="${esc(icon)}"></ha-icon></div>
-          <div class="nm">${esc(c.name || (st?.attributes?.friendly_name ?? c.entity))}</div>
+          <div class="ct">
+            <div class="ic"><ha-icon icon="${esc(icon)}"></ha-icon></div>
+            <div class="nm">${esc(c.name || (st?.attributes?.friendly_name ?? c.entity))}</div>
+          </div>
         </ha-card>`;
 
       // tap = toggle · hold (500 ms) = more-info (hold cancela o toggle)
@@ -144,6 +162,7 @@
     icon_unavailable: "Ícone (indisponível)",
     animate: "Animar ícone quando ligado (girar)",
     control: "Permitir ligar/desligar no toque",
+    icon_shadow: "Sombra no ícone quando ligado",
     color_on_name: "Ligado: texto/ícone",
     color_off_name: "Desligado: texto",
     color_off_bg: "Desligado: fundo",
@@ -182,6 +201,7 @@
         { name: "icon_unavailable", selector: { icon: {} } },
         { name: "animate", selector: { boolean: {} } },
         { name: "control", selector: { boolean: {} } },
+        { name: "icon_shadow", selector: { boolean: {} } },
       ];
     }
 
@@ -270,5 +290,5 @@
     documentationURL: "https://github.com/visaodeempresa/mw-ha-simple-button-card",
   });
 
-  console.info("%c MW-SIMPLE-BUTTON-CARD %c 0.1.0 ", "background:#1a1a1a;color:#fdfaf3;font-weight:700;", "background:#e8e3d8;color:#1a1a1a;font-weight:700;");
+  console.info("%c MW-SIMPLE-BUTTON-CARD %c 0.2.0 ", "background:#1a1a1a;color:#fdfaf3;font-weight:700;", "background:#e8e3d8;color:#1a1a1a;font-weight:700;");
 })();

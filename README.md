@@ -40,7 +40,12 @@ cards:
 | `color_on_border` / `color_off_border` | cor | (tema papel) | bordas |
 | `color_unavail` | cor | `#f5c518` | destaque indisponível |
 | `animate` | bool | `false` | gira o ícone quando ligado (ex.: exaustor) |
-| `control` | bool | `true` | `false` = toque não liga/desliga (hold segue funcionando) |
+| `control` | bool | `true` | `false` = toque não liga/desliga (hold segue funcionando); o ícone fica levemente menor e mais apagado, avisando que é só leitura |
+| `icon_shadow` | bool | `true` | sombra (relevo de papel) no ícone quando ligado; `false` deixa o ícone chapado — o brilho vermelho de *indisponível* continua, é sinal de estado |
+
+O layout (padding, grade ícone/nome, escala do ícone) é o mesmo do
+`custom:button-card` em modo vertical, então os dois botões ficam idênticos
+lado a lado em qualquer tamanho de grid.
 
 Cores no editor: picker visual (cor + transparência). Releases automáticas:
 merge na main → bump semântico → tag → HACS notifica.
