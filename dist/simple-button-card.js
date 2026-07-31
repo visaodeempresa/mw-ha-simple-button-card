@@ -406,5 +406,5 @@
     documentationURL: "https://github.com/visaodeempresa/mw-ha-simple-button-card",
   });
 
-  console.info("%c MW-SIMPLE-BUTTON-CARD %c 0.4.0 ", "background:#1a1a1a;color:#fdfaf3;font-weight:700;", "background:#e8e3d8;color:#1a1a1a;font-weight:700;");
+  console.info("%c MW-SIMPLE-BUTTON-CARD %c 0.5.0 ", "background:#1a1a1a;color:#fdfaf3;font-weight:700;", "background:#e8e3d8;color:#1a1a1a;font-weight:700;");
 })();
