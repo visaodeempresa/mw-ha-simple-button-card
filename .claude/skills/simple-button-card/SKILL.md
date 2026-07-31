@@ -12,9 +12,14 @@ JS puro + `<ha-form>`. Instala por HACS, tipo Dashboard.
 
 - `DEFAULTS` — toda propriedade nasce aqui; o editor remove do YAML tudo que
   for igual ao default.
-- Bloco `>>> paper-palette v1` — **não editar aqui**. Fonte canônica em
-  `/Volumes/SSD-T1-01/CLAUDE-SSD/IA/lib/paper-palette/`; validar com
-  `IA/tools/check-embeds.sh` antes de commitar.
+- Blocos entre marcadores — **não editar aqui**, editar na fonte canônica e
+  re-embutir nos dois cards; validar com `IA/tools/check-embeds.sh` antes de
+  commitar:
+  - `>>> paper-palette v1` → `IA/lib/paper-palette/`
+  - `>>> touch-feedback v1` → `IA/lib/touch-feedback/` (vibração `haptic()` +
+    diálogo `confirmAction()`). Não depende de nada do card: o texto de
+    reserva mora dentro do bloco. O card só precisa oferecer as chaves
+    `haptic`, `confirm` e `confirm_text` no `DEFAULTS`/editor.
 - `LAYOUT` — grade por posição do label; `hide_label` colapsa para `'i'`.
 - `_render()` — monta CSS + HTML no shadow root e religa tap/hold.
 - `LABELS` + `_schema()` — editor visual; `_schema()` é dinâmico (esconde os
