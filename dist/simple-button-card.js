@@ -16,6 +16,8 @@
     control: true,
     icon_shadow: true,
     haptic: true,
+    confirm: false,
+    confirm_text: "Tem certeza que quer {acao} {nome}?",
     name_position: "bottom",
     icon_size: "",
     name_size: 11,
@@ -81,6 +83,57 @@
       if (!inCompanionApp() && navigator.vibrate) navigator.vibrate(VIBRATE_MS[kind] ?? 10);
     } catch (_) { /* vibração é enfeite: nunca pode derrubar o toque */ }
   };
+
+  // confirmação da ação (desligada por default). Duas decisões deliberadas:
+  // 1) o diálogo é montado no document.body, não no shadow root do card —
+  //    dentro dele o overflow:hidden do botão cortaria o modal;
+  // 2) não usa window.confirm: o WebView do companion pode engolir o diálogo
+  //    nativo e devolver false sozinho, e aí a ação nunca aconteceria.
+  // O texto aceita {nome} e {acao} → "Tem certeza que quer desligar MESA?".
+  const confirmAction = (tpl, nome, acao) => new Promise((resolve) => {
+    const msg = String(tpl || DEFAULTS.confirm_text)
+      .replace(/\{nome\}/g, nome).replace(/\{acao\}/g, acao);
+    const host = document.createElement("div");
+    host.attachShadow({ mode: "open" });
+    host.shadowRoot.innerHTML = `
+      <style>
+        .ov{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
+          background:rgba(0,0,0,0.55);padding:16px;}
+        .box{max-width:min(420px,86vw);border-radius:14px;padding:22px 22px 16px;
+          background:linear-gradient(145deg, #fdfaf3, #e8e3d8);color:#1a1a1a;
+          font-family:inherit;font-size:15px;line-height:1.45;text-align:center;
+          box-shadow:0 10px 40px rgba(0,0,0,0.45), inset 2px 2px 4px rgba(255,250,235,0.80);}
+        .bt{display:flex;gap:10px;margin-top:20px;}
+        button{flex:1;padding:11px 14px;border-radius:10px;font:inherit;font-size:14px;
+          font-weight:600;cursor:pointer;border:1px solid rgba(0,0,0,0.18);}
+        .no{background:rgba(0,0,0,0.06);color:#1a1a1a;}
+        .yes{background:#1a1a1a;color:#fdfaf3;border-color:#1a1a1a;}
+      </style>
+      <div class="ov"><div class="box"><div class="msg"></div>
+        <div class="bt"><button class="no">Cancelar</button><button class="yes">Confirmar</button></div>
+      </div></div>`;
+    // textContent, não innerHTML: o texto vem do YAML do dono, mas nome de
+    // entidade não tem por que virar HTML.
+    host.shadowRoot.querySelector(".msg").textContent = msg;
+    const close = (ok) => {
+      window.removeEventListener("keydown", onKey, true);
+      host.remove();
+      resolve(ok);
+    };
+    const onKey = (ev) => {
+      if (ev.key === "Escape") { ev.stopPropagation(); close(false); }
+      else if (ev.key === "Enter") { ev.stopPropagation(); close(true); }
+    };
+    host.shadowRoot.querySelector(".yes").addEventListener("click", () => close(true));
+    host.shadowRoot.querySelector(".no").addEventListener("click", () => close(false));
+    // clique no fundo = cancelar (mesma saída do Esc)
+    host.shadowRoot.querySelector(".ov").addEventListener("click", (ev) => {
+      if (ev.target === ev.currentTarget) close(false);
+    });
+    window.addEventListener("keydown", onKey, true);
+    document.body.appendChild(host);
+    host.shadowRoot.querySelector(".yes").focus();
+  });
 
   // posição do nome em relação ao ícone: grade + folga na borda daquele lado
   const LAYOUT = {
@@ -230,9 +283,15 @@
       });
       ["pointerleave", "pointercancel"].forEach((t) =>
         card.addEventListener(t, () => { if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; } }));
-      card.addEventListener("pointerup", () => {
+      card.addEventListener("pointerup", async () => {
         if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
-        if (!held && !dead && canControl) this._hass.callService("homeassistant", "toggle", { entity_id: c.entity });
+        if (held || dead || !canControl) return;
+        if (c.confirm === true) {
+          const nome = c.name || st?.attributes?.friendly_name || c.entity;
+          const ok = await confirmAction(c.confirm_text, nome, isOn ? "desligar" : "ligar");
+          if (!ok) return;
+        }
+        this._hass.callService("homeassistant", "toggle", { entity_id: c.entity });
       });
     }
   }
@@ -249,6 +308,8 @@
     control: "Permitir ligar/desligar no toque",
     icon_shadow: "Sombra no ícone quando ligado",
     haptic: "Vibrar ao tocar (feedback táctil no celular)",
+    confirm: "Pedir confirmação antes de ligar/desligar",
+    confirm_text: "Mensagem da confirmação ({nome} e {acao} são substituídos)",
     hide_label: "Esconder o label (só o ícone, centralizado)",
     paper_color: "Cor do papel (ligado)",
     name_position: "Posição do label",
@@ -308,6 +369,10 @@
         { name: "control", selector: { boolean: {} } },
         { name: "icon_shadow", selector: { boolean: {} } },
         { name: "haptic", selector: { boolean: {} } },
+        { name: "confirm", selector: { boolean: {} } },
+        // a mensagem só aparece quando a confirmação está ligada
+        ...(this._config?.confirm === true
+          ? [{ name: "confirm_text", selector: { text: {} } }] : []),
         { name: "paper_color", selector: { select: { mode: "dropdown", options: paperOptions() } } },
         { name: "hide_label", selector: { boolean: {} } },
         { name: "icon_size", selector: { number: { min: 8, max: 200, step: 1, mode: "box", unit_of_measurement: "px" } } },
