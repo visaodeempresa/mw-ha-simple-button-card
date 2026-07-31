@@ -35,6 +35,20 @@
 - Deploy de teste por SSH em `/config/www/community/mw-ha-simple-button-card/`
   (.js + .js.gz) — o HA serve o .gz quando existe, os dois precisam ir junto.
 
+## 2026-07-31 — geometria no editor (mesmo PR #2, pré-merge)
+- 4 propriedades novas, todas no editor visual: `name_position`
+  (bottom/top/left/right — troca `grid-template-areas` e o lado da folga de
+  8px do label), `icon_size` (vazio = escala com a célula; com valor o ícone
+  vira `position:relative` numa caixa fixa centrada pelo flex), `name_size`
+  e `name_gap` (`gap` da grade). 18 propriedades.
+- Helper `px()`: número vira px, string com unidade (`2em`, `40%`) passa
+  direto — o YAML aceita os dois.
+- Editor: campos vazios saem do `data` do `ha-form` (senão o seletor numérico
+  mostra lixo) e `_onChange` ignora `undefined/null/""` para não gravar
+  `icon_size: null` no YAML.
+- Versão do banner **não** subiu: as features entram na mesma release v0.2.0
+  (o bump é calculado pelo workflow a partir da última tag).
+
 ## 2026-07-17 — animate + control (no PR #1, pré-merge)
 - `animate` (default false): ícone gira (sbc-spin 1.2s, translateZ/backface,
   padrão do exaustor do dono) quando ligado.

@@ -15,6 +15,10 @@
     animate: false,
     control: true,
     icon_shadow: true,
+    name_position: "bottom",
+    icon_size: "",
+    name_size: 11,
+    name_gap: 0,
     color_on_name: "#1a1a1a",
     color_off_name: "rgba(255, 255, 255, 0.78)",
     color_off_bg: "rgba(0, 0, 0, 0.45)",
@@ -25,6 +29,21 @@
 
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g,
     (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  // número vira px; string com unidade ("2em", "40%") passa direto; vazio = automático
+  const px = (v) => {
+    if (v === "" || v === null || v === undefined) return "";
+    const s = String(v).trim();
+    return /^-?\d+(\.\d+)?$/.test(s) ? `${s}px` : s;
+  };
+
+  // posição do nome em relação ao ícone: grade + folga na borda daquele lado
+  const LAYOUT = {
+    bottom: { grid: "grid-template-areas:'i' 'n';grid-template-columns:1fr;grid-template-rows:1fr min-content;", edge: "padding-bottom:8px;" },
+    top: { grid: "grid-template-areas:'n' 'i';grid-template-columns:1fr;grid-template-rows:min-content 1fr;", edge: "padding-top:8px;" },
+    left: { grid: "grid-template-areas:'n i';grid-template-columns:min-content 1fr;grid-template-rows:1fr;", edge: "padding-left:8px;" },
+    right: { grid: "grid-template-areas:'i n';grid-template-columns:1fr min-content;grid-template-rows:1fr;", edge: "padding-right:8px;" },
+  };
 
   class SimpleButtonCard extends HTMLElement {
     setConfig(config) {
@@ -89,6 +108,19 @@
       // para o botão avisar sozinho que o toque não liga/desliga nada.
       const readOnly = canControl ? "" : "opacity:.6;transform:scale(.88);";
 
+      // geometria ajustável: posição do nome, tamanho do ícone/texto e folga entre eles
+      const layout = LAYOUT[c.name_position] || LAYOUT.bottom;
+      const gap = px(c.name_gap);
+      const nameSize = px(c.name_size) || "11px";
+      const isz = px(c.icon_size);
+      // sem icon_size o ícone escala com a célula (comportamento do button-card);
+      // com icon_size ele vira uma caixa fixa centrada pelo flex da célula.
+      const iconBox = isz
+        ? `position:relative;width:${isz};height:${isz};max-height:${isz};
+            --mdc-icon-size:${isz};--iron-icon-width:${isz};--iron-icon-height:${isz};`
+        : `position:absolute;width:100%;height:100%;max-height:100%;
+            --mdc-icon-size:100%;--iron-icon-width:100%;--iron-icon-height:100%;`;
+
       const nameColor = dead ? c.color_unavail : isOn ? c.color_on_name : c.color_off_name;
       const nameDeco = dead ? "line-through" : "none";
       const nameShadow = dead
@@ -110,19 +142,17 @@
             -webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;
             transition:background .2s ease,box-shadow .2s ease;height:100%;width:100%;box-sizing:border-box;}
           .ct{display:grid;width:100%;height:100%;text-align:center;align-items:center;
-            grid-template-areas:'i' 'n';grid-template-columns:1fr;grid-template-rows:1fr min-content;}
+            ${layout.grid}${gap ? `gap:${gap};` : ""}}
           .ic{grid-area:i;display:flex;position:relative;overflow:hidden;
             height:100%;width:100%;max-width:100%;max-height:100%;
             align-self:center;justify-self:center;align-items:center;justify-content:center;
             ${readOnly}transition:opacity .2s ease,transform .2s ease;}
-          .ic ha-icon{display:inline-block;position:absolute;margin:auto;
-            height:100%;width:100%;max-height:100%;
-            --mdc-icon-size:100%;--iron-icon-width:100%;--iron-icon-height:100%;
+          .ic ha-icon{display:inline-block;margin:auto;${iconBox}
             color:${iconColor};filter:${iconFilter};transition:color .2s ease;
             ${spin}transform-origin:center center;backface-visibility:hidden;
             will-change:${c.animate && isOn ? "transform" : "auto"};}
           .nm{grid-area:n;max-width:100%;align-self:center;justify-self:center;
-            font-size:11px;font-weight:600;padding-bottom:8px;color:${nameColor};
+            font-size:${nameSize};font-weight:600;${layout.edge}color:${nameColor};
             text-decoration:${nameDeco};text-shadow:${nameShadow};}
         </style>
         <ha-card>
@@ -163,6 +193,10 @@
     animate: "Animar ícone quando ligado (girar)",
     control: "Permitir ligar/desligar no toque",
     icon_shadow: "Sombra no ícone quando ligado",
+    name_position: "Posição do label",
+    icon_size: "Tamanho do ícone (vazio = automático)",
+    name_size: "Tamanho do texto do label",
+    name_gap: "Distância entre label e ícone",
     color_on_name: "Ligado: texto/ícone",
     color_off_name: "Desligado: texto",
     color_off_bg: "Desligado: fundo",
@@ -202,6 +236,15 @@
         { name: "animate", selector: { boolean: {} } },
         { name: "control", selector: { boolean: {} } },
         { name: "icon_shadow", selector: { boolean: {} } },
+        { name: "name_position", selector: { select: { mode: "dropdown", options: [
+          { value: "bottom", label: "Abaixo do ícone" },
+          { value: "top", label: "Acima do ícone" },
+          { value: "left", label: "À esquerda do ícone" },
+          { value: "right", label: "À direita do ícone" },
+        ] } } },
+        { name: "icon_size", selector: { number: { min: 8, max: 200, step: 1, mode: "box", unit_of_measurement: "px" } } },
+        { name: "name_size", selector: { number: { min: 6, max: 40, step: 1, mode: "box", unit_of_measurement: "px" } } },
+        { name: "name_gap", selector: { number: { min: 0, max: 40, step: 1, mode: "box", unit_of_measurement: "px" } } },
       ];
     }
 
@@ -214,7 +257,11 @@
       }
       this._form.hass = this._hass;
       this._form.schema = this._schema();
-      this._form.data = { ...DEFAULTS, ...this._config };
+      // campos vazios (ex.: icon_size = automático) não vão para o ha-form,
+      // senão o seletor numérico mostra lixo em vez de caixa vazia
+      const data = { ...DEFAULTS, ...this._config };
+      for (const k of Object.keys(data)) if (data[k] === "") delete data[k];
+      this._form.data = data;
       this._renderColors();
     }
 
@@ -266,7 +313,9 @@
       const v = { ...ev.detail.value };
       const clean = {};
       for (const [k, val] of Object.entries(v)) {
-        if (k === "entity" || k === "name" || val !== DEFAULTS[k]) clean[k] = val;
+        // campo limpo volta ao default em vez de gravar null no YAML
+        if (val === undefined || val === null || val === "") continue;
+        if (k === "entity" || val !== DEFAULTS[k]) clean[k] = val;
       }
       for (const k of COLOR_FIELDS) {
         if (this._config[k] !== undefined) clean[k] = this._config[k];

@@ -42,6 +42,10 @@ cards:
 | `animate` | bool | `false` | gira o ícone quando ligado (ex.: exaustor) |
 | `control` | bool | `true` | `false` = toque não liga/desliga (hold segue funcionando); o ícone fica levemente menor e mais apagado, avisando que é só leitura |
 | `icon_shadow` | bool | `true` | sombra (relevo de papel) no ícone quando ligado; `false` deixa o ícone chapado — o brilho vermelho de *indisponível* continua, é sinal de estado |
+| `name_position` | `bottom`/`top`/`left`/`right` | `bottom` | posição do label em relação ao ícone |
+| `icon_size` | px | *(vazio)* | vazio = o ícone escala com o botão (igual ao `button-card`); com valor vira caixa fixa (`28`, `"2em"`, `"40%"`) |
+| `name_size` | px | `11` | tamanho do texto do label |
+| `name_gap` | px | `0` | distância entre o label e o ícone |
 
 O layout (padding, grade ícone/nome, escala do ícone) é o mesmo do
 `custom:button-card` em modo vertical, então os dois botões ficam idênticos
