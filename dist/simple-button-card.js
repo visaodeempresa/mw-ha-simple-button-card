@@ -15,6 +15,7 @@
     animate: false,
     control: true,
     icon_shadow: true,
+    haptic: true,
     name_position: "bottom",
     icon_size: "",
     name_size: 11,
@@ -63,6 +64,23 @@
       label: `${h[1]} · tom ${i + 1}${i === 0 ? " (mais claro)" : i === 6 ? " (mais encardido)" : ""}`,
     }))));
   // <<< paper-palette v1
+
+  // feedback táctil: o app companion (iOS/Android) escuta o evento "haptic" na
+  // window e chama o motor de vibração nativo — é assim que o próprio frontend
+  // do HA vibra. Fora do app não existe essa ponte, então cai no
+  // navigator.vibrate (funciona no Chrome do Android; o Safari do iPhone não
+  // vibra em página nenhuma, só dentro do companion).
+  const VIBRATE_MS = { selection: 5, light: 10, success: 15, medium: 20, warning: 25, heavy: 30, failure: 40 };
+  const inCompanionApp = () =>
+    !!(window.externalApp || window.webkit?.messageHandlers?.externalBus);
+  const haptic = (kind) => {
+    try {
+      window.dispatchEvent(new CustomEvent("haptic",
+        { bubbles: true, composed: true, detail: kind }));
+      // sem a ponte do companion o evento morre sem ninguém escutando
+      if (!inCompanionApp() && navigator.vibrate) navigator.vibrate(VIBRATE_MS[kind] ?? 10);
+    } catch (_) { /* vibração é enfeite: nunca pode derrubar o toque */ }
+  };
 
   // posição do nome em relação ao ícone: grade + folga na borda daquele lado
   const LAYOUT = {
@@ -194,12 +212,18 @@
         </ha-card>`;
 
       // tap = toggle · hold (500 ms) = more-info (hold cancela o toggle)
+      // A vibração vai no pointerdown, não no pointerup: o dedo tem que sentir
+      // o botão no instante em que encosta, antes de o serviço responder.
+      // O hold ganha um pulso mais forte para avisar que virou more-info.
+      const buzz = c.haptic !== false;
       const card = this.shadowRoot.querySelector("ha-card");
       let holdTimer = null, held = false;
       card.addEventListener("pointerdown", () => {
         held = false;
+        if (buzz) haptic("light");
         holdTimer = setTimeout(() => {
           held = true; holdTimer = null;
+          if (buzz) haptic("medium");
           this.dispatchEvent(new CustomEvent("hass-more-info",
             { bubbles: true, composed: true, detail: { entityId: c.entity } }));
         }, 500);
@@ -224,6 +248,7 @@
     animate: "Animar ícone quando ligado (girar)",
     control: "Permitir ligar/desligar no toque",
     icon_shadow: "Sombra no ícone quando ligado",
+    haptic: "Vibrar ao tocar (feedback táctil no celular)",
     hide_label: "Esconder o label (só o ícone, centralizado)",
     paper_color: "Cor do papel (ligado)",
     name_position: "Posição do label",
@@ -282,6 +307,7 @@
         { name: "animate", selector: { boolean: {} } },
         { name: "control", selector: { boolean: {} } },
         { name: "icon_shadow", selector: { boolean: {} } },
+        { name: "haptic", selector: { boolean: {} } },
         { name: "paper_color", selector: { select: { mode: "dropdown", options: paperOptions() } } },
         { name: "hide_label", selector: { boolean: {} } },
         { name: "icon_size", selector: { number: { min: 8, max: 200, step: 1, mode: "box", unit_of_measurement: "px" } } },
