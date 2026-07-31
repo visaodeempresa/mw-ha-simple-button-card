@@ -67,6 +67,7 @@ sincroniza sozinho e mexer antes cria divergência.
 | "HACS não mostra versão nova" | commit em feature branch; release só na `main` |
 | `curl` novo, tela velha | `.js.gz` antigo ainda servido |
 | YAML com `chave: null` | campo limpo do editor voltando `undefined` — filtrar em `_onChange` |
+| "Mergeei e a feature não apareceu na release" | commits empurrados para a branch depois do merge do PR — órfãos, sem PR | branch nova a cada lote |
 | Ícone destoando dos vizinhos | tamanho fixo em px em vez de escalar com a célula |
 
 Commits: inglês, assinados em GPG, autoria exclusiva do dono, sem coautoria.
