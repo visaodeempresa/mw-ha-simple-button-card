@@ -19,6 +19,8 @@
     icon_size: "",
     name_size: 11,
     name_gap: 0,
+    hide_label: false,
+    paper_color: "paper",
     color_on_name: "#1a1a1a",
     color_off_name: "rgba(255, 255, 255, 0.78)",
     color_off_bg: "rgba(0, 0, 0, 0.45)",
@@ -36,6 +38,31 @@
     const s = String(v).trim();
     return /^-?\d+(\.\d+)?$/.test(s) ? `${s}px` : s;
   };
+
+  // >>> paper-palette v1 — fonte canônica: /Volumes/SSD-T1-01/CLAUDE-SSD/IA/lib/paper-palette/paper-palette.js
+  // 49 papéis encardidos: 7 matizes do arco-íris × 7 tons (1 = quase branco,
+  // 7 = mais encardido). Saturação baixa de propósito — papel descansa a vista.
+  const PAPER_HUES = [
+    ["red", "Vermelho", 6], ["orange", "Laranja", 27], ["yellow", "Amarelo", 47],
+    ["green", "Verde", 96], ["blue", "Azul", 203], ["indigo", "Anil", 236],
+    ["violet", "Violeta", 283],
+  ];
+  const PAPER_TONES = [[97, 6], [96, 9], [94, 12], [92, 15], [90, 18], [88, 21], [85, 24]];
+  const PAPER_DEFAULT = "linear-gradient(145deg, #fdfaf3, #e8e3d8)";
+  const paperGradient = (key) => {
+    const m = /^([a-z]+)-([1-7])$/.exec(String(key || "").trim());
+    if (!m) return PAPER_DEFAULT;
+    const hue = PAPER_HUES.find((h) => h[0] === m[1]);
+    if (!hue) return PAPER_DEFAULT;
+    const [l, s] = PAPER_TONES[+m[2] - 1];
+    return `linear-gradient(145deg, hsl(${hue[2]}, ${s}%, ${l}%), hsl(${hue[2]}, ${s + 4}%, ${l - 7}%))`;
+  };
+  const paperOptions = () => [{ value: "paper", label: "Papel original (creme)" }].concat(
+    ...PAPER_HUES.map((h) => PAPER_TONES.map((t, i) => ({
+      value: `${h[0]}-${i + 1}`,
+      label: `${h[1]} · tom ${i + 1}${i === 0 ? " (mais claro)" : i === 6 ? " (mais encardido)" : ""}`,
+    }))));
+  // <<< paper-palette v1
 
   // posição do nome em relação ao ícone: grade + folga na borda daquele lado
   const LAYOUT = {
@@ -82,7 +109,7 @@
       const isOn = state === "on";
       const dead = state === "unavailable" || state === "unknown";
 
-      const bg = isOn ? "linear-gradient(145deg, #fdfaf3, #e8e3d8)" : c.color_off_bg;
+      const bg = isOn ? paperGradient(c.paper_color) : c.color_off_bg;
       const border = isOn ? c.color_on_border : c.color_off_border;
       const shadow = isOn
         ? "0 0 8px 2px rgba(0,0,0,0.28), 0 4px 10px rgba(0,0,0,0.14), inset 2px 2px 4px rgba(255,250,235,0.80), inset -2px -2px 4px rgba(0,0,0,0.08)"
@@ -109,7 +136,11 @@
       const readOnly = canControl ? "" : "opacity:.6;transform:scale(.88);";
 
       // geometria ajustável: posição do nome, tamanho do ícone/texto e folga entre eles
-      const layout = LAYOUT[c.name_position] || LAYOUT.bottom;
+      // hide_label: só o ícone, ocupando o botão inteiro e centrado
+      const bare = c.hide_label === true;
+      const layout = bare
+        ? { grid: "grid-template-areas:'i';grid-template-columns:1fr;grid-template-rows:1fr;", edge: "" }
+        : LAYOUT[c.name_position] || LAYOUT.bottom;
       const gap = px(c.name_gap);
       const nameSize = px(c.name_size) || "11px";
       const isz = px(c.icon_size);
@@ -158,7 +189,7 @@
         <ha-card>
           <div class="ct">
             <div class="ic"><ha-icon icon="${esc(icon)}"></ha-icon></div>
-            <div class="nm">${esc(c.name || (st?.attributes?.friendly_name ?? c.entity))}</div>
+            ${bare ? "" : `<div class="nm">${esc(c.name || (st?.attributes?.friendly_name ?? c.entity))}</div>`}
           </div>
         </ha-card>`;
 
@@ -193,6 +224,8 @@
     animate: "Animar ícone quando ligado (girar)",
     control: "Permitir ligar/desligar no toque",
     icon_shadow: "Sombra no ícone quando ligado",
+    hide_label: "Esconder o label (só o ícone, centralizado)",
+    paper_color: "Cor do papel (ligado)",
     name_position: "Posição do label",
     icon_size: "Tamanho do ícone (vazio = automático)",
     name_size: "Tamanho do texto do label",
@@ -226,6 +259,19 @@
     set hass(hass) { this._hass = hass; if (this._form) this._form.hass = hass; }
 
     _schema() {
+      // com hide_label ligado, os campos do label saem do formulário —
+      // não adianta oferecer posição/tamanho de algo que não é desenhado
+      const bare = this._config?.hide_label === true;
+      const labelFields = bare ? [] : [
+        { name: "name_position", selector: { select: { mode: "dropdown", options: [
+          { value: "bottom", label: "Abaixo do ícone" },
+          { value: "top", label: "Acima do ícone" },
+          { value: "left", label: "À esquerda do ícone" },
+          { value: "right", label: "À direita do ícone" },
+        ] } } },
+        { name: "name_size", selector: { number: { min: 6, max: 40, step: 1, mode: "box", unit_of_measurement: "px" } } },
+        { name: "name_gap", selector: { number: { min: 0, max: 40, step: 1, mode: "box", unit_of_measurement: "px" } } },
+      ];
       return [
         { name: "entity", required: true,
           selector: { entity: { domain: ["light", "switch", "fan", "input_boolean"] } } },
@@ -236,15 +282,10 @@
         { name: "animate", selector: { boolean: {} } },
         { name: "control", selector: { boolean: {} } },
         { name: "icon_shadow", selector: { boolean: {} } },
-        { name: "name_position", selector: { select: { mode: "dropdown", options: [
-          { value: "bottom", label: "Abaixo do ícone" },
-          { value: "top", label: "Acima do ícone" },
-          { value: "left", label: "À esquerda do ícone" },
-          { value: "right", label: "À direita do ícone" },
-        ] } } },
+        { name: "paper_color", selector: { select: { mode: "dropdown", options: paperOptions() } } },
+        { name: "hide_label", selector: { boolean: {} } },
         { name: "icon_size", selector: { number: { min: 8, max: 200, step: 1, mode: "box", unit_of_measurement: "px" } } },
-        { name: "name_size", selector: { number: { min: 6, max: 40, step: 1, mode: "box", unit_of_measurement: "px" } } },
-        { name: "name_gap", selector: { number: { min: 0, max: 40, step: 1, mode: "box", unit_of_measurement: "px" } } },
+        ...labelFields,
       ];
     }
 
