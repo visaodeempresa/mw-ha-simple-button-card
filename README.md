@@ -46,6 +46,18 @@ cards:
 | `icon_size` | px | *(vazio)* | vazio = o ícone escala com o botão (igual ao `button-card`); com valor vira caixa fixa (`28`, `"2em"`, `"40%"`) |
 | `name_size` | px | `11` | tamanho do texto do label |
 | `name_gap` | px | `0` | distância entre o label e o ícone |
+| `hide_label` | bool | `false` | só o ícone, centralizado ocupando o botão inteiro (some com o label e com os campos dele no editor) |
+| `paper_color` | `paper` ou `<cor>-<1..7>` | `paper` | cor do papel quando ligado — 49 tons encardidos (7 matizes do arco-íris × 7 tons) + o creme original |
+
+### Paleta de papel encardido (`paper_color`)
+
+`paper` = creme original. As outras 49 seguem `<matiz>-<tom>`, com matiz em
+`red`, `orange`, `yellow`, `green`, `blue`, `indigo`, `violet` e tom de `1`
+(quase branco) a `7` (mais encardido) — ex.: `yellow-4`, `indigo-7`.
+Saturação baixa de propósito: papel encardido cansa menos a vista que branco
+puro. Fonte canônica da paleta (compartilhada com o
+[power-button-card](https://github.com/visaodeempresa/mw-ha-power-button-card)):
+`IA/lib/paper-palette/paper-palette.js`.
 
 O layout (padding, grade ícone/nome, escala do ícone) é o mesmo do
 `custom:button-card` em modo vertical, então os dois botões ficam idênticos

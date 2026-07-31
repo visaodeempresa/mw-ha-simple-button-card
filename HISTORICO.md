@@ -1,5 +1,15 @@
 # HISTÓRICO — mw-ha-simple-button-card
 
+
+## 2026-07-31 — hide_label + paleta de papel (mesmo PR #2, pré-merge)
+- `hide_label`: grade vira `'i'` sozinha, ícone ocupa o botão inteiro, o `<div class="nm">`
+  não é emitido e o editor esconde os campos de label (posição/tamanho/folga).
+- `paper_color`: 49 papéis encardidos (7 matizes × 7 tons) + `paper` (creme
+  original). Bloco `paper-palette v1` entre marcadores, idêntico ao do
+  power-button-card — fonte canônica `IA/lib/paper-palette/paper-palette.js`,
+  conferido por `IA/tools/check-embeds.sh`.
+- Chave inválida em `paper_color` cai no creme, nunca quebra o card.
+
 ## 2026-07-17 — v0.1.0 (sessão inicial, Claude)
 - Fábrica reaproveitada do mw-ha-power-button-card (v0.1.1 + auto-release).
 - `dist/simple-button-card.js`: botão quadrado papel independente (sem grid
