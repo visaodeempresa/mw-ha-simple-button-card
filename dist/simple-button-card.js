@@ -18,6 +18,9 @@
     haptic: true,
     confirm: false,
     confirm_text: "Tem certeza que quer {acao} {nome}?",
+    confirm_3d: false,
+    confirm_paper_dark: false,
+    confirm_paper_color: "paper",
     name_position: "bottom",
     icon_size: "",
     name_size: 11,
@@ -67,7 +70,38 @@
     }))));
   // <<< paper-palette v1
 
-  // >>> touch-feedback v1 — fonte canônica: /Volumes/SSD-T1-01/CLAUDE-SSD/IA/lib/touch-feedback/touch-feedback.js
+  // >>> paper-dark-palette v1 — fonte canônica: /Volumes/SSD-T1-01/CLAUDE-SSD/IA/lib/paper-dark-palette/paper-dark-palette.js
+  // 49 papéis de noite: as mesmas 7 matizes do paper-palette v1 × 7 tons
+  // (1 = papel escuro mais claro, 7 = mais encardido). A saturação sobe mais
+  // rápido que na rampa clara porque matiz em luminosidade baixa desaparece.
+  const PAPER_DARK_HUES = [
+    ["red", "Vermelho", 6], ["orange", "Laranja", 27], ["yellow", "Amarelo", 47],
+    ["green", "Verde", 96], ["blue", "Azul", 203], ["indigo", "Anil", 236],
+    ["violet", "Violeta", 283],
+  ];
+  const PAPER_DARK_TONES = [[26, 10], [24, 13], [21, 16], [19, 19], [16, 22], [14, 25], [11, 28]];
+  const PAPER_DARK_DEFAULT = "linear-gradient(145deg, #2b2825, #161411)";
+  const paperDarkGradient = (key) => {
+    const m = /^([a-z]+)-([1-7])$/.exec(String(key || "").trim());
+    if (!m) return PAPER_DARK_DEFAULT;
+    const hue = PAPER_DARK_HUES.find((h) => h[0] === m[1]);
+    if (!hue) return PAPER_DARK_DEFAULT;
+    const [l, s] = PAPER_DARK_TONES[+m[2] - 1];
+    return `linear-gradient(145deg, hsl(${hue[2]}, ${s}%, ${l}%), hsl(${hue[2]}, ${s + 6}%, ${Math.max(4, l - 6)}%))`;
+  };
+  const paperDarkOptions = () => [{ value: "paper", label: "Papel de noite (grafite)" }].concat(
+    ...PAPER_DARK_HUES.map((h) => PAPER_DARK_TONES.map((t, i) => ({
+      value: `${h[0]}-${i + 1}`,
+      label: `${h[1]} · tom ${i + 1}${i === 0 ? " (mais claro)" : i === 6 ? " (mais escuro)" : ""}`,
+    }))));
+  // Tinta que se lê sobre o papel do modo pedido. Não é contraste calculado:
+  // é o par fixo que a casa usa, para dois cards lado a lado combinarem.
+  const paperInk = (dark) => (dark
+    ? { text: "rgba(247, 244, 236, 0.94)", dim: "rgba(247, 244, 236, 0.62)", line: "rgba(255, 255, 255, 0.14)" }
+    : { text: "rgba(28, 25, 20, 0.92)", dim: "rgba(28, 25, 20, 0.58)", line: "rgba(0, 0, 0, 0.14)" });
+  // <<< paper-dark-palette v1
+
+  // >>> touch-feedback v2 — fonte canônica: /Volumes/SSD-T1-01/CLAUDE-SSD/IA/lib/touch-feedback/touch-feedback-v2.js
   // feedback táctil: o app companion (iOS/Android) escuta o evento "haptic" na
   // window e chama o motor de vibração nativo — é assim que o próprio frontend
   // do HA vibra. Fora do app não existe essa ponte, então cai no
@@ -94,24 +128,89 @@
   // O card hospedeiro oferece as chaves confirm/confirm_text; o texto de
   // reserva mora aqui para o bloco não depender do DEFAULTS de ninguém.
   const CONFIRM_FALLBACK = "Tem certeza que quer {acao} {nome}?";
-  const confirmAction = (tpl, nome, acao) => new Promise((resolve) => {
+  const CONFIRM_PAPER = "linear-gradient(145deg, #fdfaf3, #e8e3d8)";
+  // tinta de reserva: o mesmo par de paperInk(), repetido aqui para o bloco
+  // continuar colável em card que não embute a paleta escura.
+  const CONFIRM_INK = (dark) => (dark
+    ? { text: "rgba(247, 244, 236, 0.94)", dim: "rgba(247, 244, 236, 0.62)", line: "rgba(255, 255, 255, 0.14)" }
+    : { text: "rgba(28, 25, 20, 0.92)", dim: "rgba(28, 25, 20, 0.58)", line: "rgba(0, 0, 0, 0.14)" });
+
+  // O relevo do papel é o MESMO vocabulário dos botões MW, e por isso a
+  // hierarquia sai de graça: "Confirmar" é papel saliente (o botão ligado) e
+  // "Cancelar" é papel afundado (o botão desligado). Ninguém precisa de cor de
+  // alerta para saber qual é qual.
+  const paper3dSkin = (bg, dark) => {
+    // no papel escuro o brilho interno de cima tem que cair muito: 0.80 de
+    // branco sobre grafite vira risco de giz, não luz.
+    const lit = dark ? "rgba(255,255,255,0.10)" : "rgba(255,250,235,0.80)";
+    const litSoft = dark ? "rgba(255,255,255,0.07)" : "rgba(255,250,235,0.85)";
+    const dent = dark ? "rgba(0,0,0,0.50)" : "rgba(0,0,0,0.08)";
+    const edge = dark ? "rgba(255,255,255,0.10)" : "rgba(180,180,180,0.55)";
+    const drop = dark ? "rgba(0,0,0,0.70)" : "rgba(0,0,0,0.50)";
+    // botão e balão são o MESMO papel, e só o relevo não basta para separá-los
+    // — nos tons encardidos (claros ou escuros) o botão sumia dentro do balão.
+    // Uma camada de tinta por cima da folha resolve sem inventar segunda cor:
+    // o saliente clareia, o afundado escurece, os dois na mesma matéria.
+    const tint = (v) => `linear-gradient(${v}, ${v}), ${bg}`;
+    const upBg = tint(dark ? "rgba(255,255,255,0.075)" : "rgba(255,255,255,0.34)");
+    const downBg = tint(dark ? "rgba(0,0,0,0.30)" : "rgba(0,0,0,0.055)");
+    return {
+      box: `background:${bg};border:1px solid ${edge};
+        box-shadow:0 18px 50px ${drop}, 0 0 8px 2px rgba(0,0,0,0.28),
+          inset 2px 2px 4px ${lit}, inset -2px -2px 4px ${dent};`,
+      // saliente: luz em cima à esquerda, sombra projetada embaixo
+      up: `background:${upBg};border:1px solid ${edge};
+        box-shadow:inset 1px 1px 2px ${litSoft}, inset -1px -1px 2px ${dent},
+          0 3px 6px rgba(0,0,0,${dark ? "0.45" : "0.22"});`,
+      // afundado: a sombra vai para dentro — mesmo estado "desligado" do card
+      down: `background:${downBg};border:1px solid ${edge};
+        box-shadow:inset 2px 2px 5px rgba(0,0,0,${dark ? "0.55" : "0.30"}),
+          inset -1px -1px 3px ${dark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.45)"};`,
+    };
+  };
+
+  const confirmAction = (tpl, nome, acao, opts) => new Promise((resolve) => {
+    const o = opts || {};
     const msg = String(tpl || CONFIRM_FALLBACK)
       .replace(/\{nome\}/g, nome).replace(/\{acao\}/g, acao);
+    const dark = o.dark === true;
+    const ink = o.ink || CONFIRM_INK(dark);
+    const bg = o.bg || CONFIRM_PAPER;
+    const three = o.paper3d === true;
+    const skin = three ? paper3dSkin(bg, dark) : null;
+
+    // v1 chapado × v2 em relevo: as duas peles saem daqui, e o resto do
+    // diálogo (foco, Esc, clique no fundo) é idêntico nos dois casos.
+    const boxCss = three ? skin.box
+      : `background:${CONFIRM_PAPER};box-shadow:0 10px 40px rgba(0,0,0,0.45), inset 2px 2px 4px rgba(255,250,235,0.80);`;
+    const textCol = three ? ink.text : "#1a1a1a";
+    const noCss = three ? skin.down + `color:${ink.text};`
+      : "background:rgba(0,0,0,0.06);color:#1a1a1a;border:1px solid rgba(0,0,0,0.18);";
+    const yesCss = three ? skin.up + `color:${ink.text};`
+      : "background:#1a1a1a;color:#fdfaf3;border:1px solid #1a1a1a;";
+    // o toque tem que responder na hora: pressionar afunda o saliente e
+    // levanta o afundado, os dois trocando de lugar como papel de verdade.
+    const pressCss = three
+      ? `.bt button:active{${skin.down}transform:translateY(1px);}
+         .bt button.no:active{${skin.up}transform:translateY(1px);}`
+      : ".bt button:active{transform:translateY(1px);}";
+
     const host = document.createElement("div");
     host.attachShadow({ mode: "open" });
     host.shadowRoot.innerHTML = `
       <style>
         .ov{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
-          background:rgba(0,0,0,0.55);padding:16px;}
+          background:rgba(0,0,0,${three && dark ? "0.68" : "0.55"});padding:16px;}
         .box{max-width:min(420px,86vw);border-radius:14px;padding:22px 22px 16px;
-          background:linear-gradient(145deg, #fdfaf3, #e8e3d8);color:#1a1a1a;
-          font-family:inherit;font-size:15px;line-height:1.45;text-align:center;
-          box-shadow:0 10px 40px rgba(0,0,0,0.45), inset 2px 2px 4px rgba(255,250,235,0.80);}
+          color:${textCol};font-family:inherit;font-size:15px;line-height:1.45;text-align:center;
+          ${boxCss}}
         .bt{display:flex;gap:10px;margin-top:20px;}
-        button{flex:1;padding:11px 14px;border-radius:10px;font:inherit;font-size:14px;
-          font-weight:600;cursor:pointer;border:1px solid rgba(0,0,0,0.18);}
-        .no{background:rgba(0,0,0,0.06);color:#1a1a1a;}
-        .yes{background:#1a1a1a;color:#fdfaf3;border-color:#1a1a1a;}
+        button{flex:1;padding:11px 14px;border-radius:${three ? "12px" : "10px"};font:inherit;font-size:14px;
+          font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;
+          transition:box-shadow .15s ease,transform .1s ease;}
+        .no{${noCss}}
+        .yes{${yesCss}}
+        ${pressCss}
       </style>
       <div class="ov"><div class="box"><div class="msg"></div>
         <div class="bt"><button class="no">Cancelar</button><button class="yes">Confirmar</button></div>
@@ -138,7 +237,7 @@
     document.body.appendChild(host);
     host.shadowRoot.querySelector(".yes").focus();
   });
-  // <<< touch-feedback v1
+  // <<< touch-feedback v2
 
   // posição do nome em relação ao ícone: grade + folga na borda daquele lado
   const LAYOUT = {
@@ -293,7 +392,15 @@
         if (held || dead || !canControl) return;
         if (c.confirm === true) {
           const nome = c.name || st?.attributes?.friendly_name || c.entity;
-          const ok = await confirmAction(c.confirm_text, nome, isOn ? "desligar" : "ligar");
+          // quem escolhe o papel é o card, não o bloco: as duas paletas estão
+          // embutidas aqui e a mesma chave ("blue-5") serve às duas rampas.
+          const cdark = c.confirm_paper_dark === true;
+          const ok = await confirmAction(c.confirm_text, nome, isOn ? "desligar" : "ligar", {
+            paper3d: c.confirm_3d === true,
+            dark: cdark,
+            bg: cdark ? paperDarkGradient(c.confirm_paper_color) : paperGradient(c.confirm_paper_color),
+            ink: paperInk(cdark),
+          });
           if (!ok) return;
         }
         this._hass.callService("homeassistant", "toggle", { entity_id: c.entity });
@@ -315,6 +422,9 @@
     haptic: "Vibrar ao tocar (feedback táctil no celular)",
     confirm: "Pedir confirmação antes de ligar/desligar",
     confirm_text: "Mensagem da confirmação ({nome} e {acao} são substituídos)",
+    confirm_3d: "Balão 3D (a confirmação em papel com relevo)",
+    confirm_paper_dark: "Balão em papel escuro",
+    confirm_paper_color: "Cor do papel do balão",
     hide_label: "Esconder o label (só o ícone, centralizado)",
     paper_color: "Cor do papel (ligado)",
     name_position: "Posição do label",
@@ -375,9 +485,19 @@
         { name: "icon_shadow", selector: { boolean: {} } },
         { name: "haptic", selector: { boolean: {} } },
         { name: "confirm", selector: { boolean: {} } },
-        // a mensagem só aparece quando a confirmação está ligada
-        ...(this._config?.confirm === true
-          ? [{ name: "confirm_text", selector: { text: {} } }] : []),
+        // mensagem e aparência do balão só aparecem com a confirmação ligada;
+        // a cor do papel, só com o relevo ligado — sem ele não há papel nenhum.
+        ...(this._config?.confirm === true ? [
+          { name: "confirm_text", selector: { text: {} } },
+          { name: "confirm_3d", selector: { boolean: {} } },
+          ...(this._config?.confirm_3d === true ? [
+            { name: "confirm_paper_dark", selector: { boolean: {} } },
+            // as duas rampas usam as MESMAS chaves, então virar o interruptor
+            // do papel escuro troca a lista sem invalidar o que já foi escolhido
+            { name: "confirm_paper_color", selector: { select: { mode: "dropdown",
+              options: this._config?.confirm_paper_dark === true ? paperDarkOptions() : paperOptions() } } },
+          ] : []),
+        ] : []),
         { name: "paper_color", selector: { select: { mode: "dropdown", options: paperOptions() } } },
         { name: "hide_label", selector: { boolean: {} } },
         { name: "icon_size", selector: { number: { min: 8, max: 200, step: 1, mode: "box", unit_of_measurement: "px" } } },
