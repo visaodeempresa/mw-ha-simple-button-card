@@ -129,6 +129,8 @@ sincroniza sozinho e mexer antes cria divergência.
 | Campo aparece no editor mas a tela não muda | valor não foi gravado no YAML (card aninhado fundo no `mw-tab-card`, ou dashboard não salvo) — conferir a config salva, não o editor |
 | Botão do balão 3D sumindo dentro do balão | balão e botão são o mesmo papel: relevo sozinho não separa, falta a camada de tinta (`linear-gradient(cor,cor), ${bg}`) — e os valores claro/escuro **não** são simétricos |
 | Balão escuro com "risco de giz" na borda de cima | `inset` de `rgba(255,250,235,0.80)` copiado do papel claro; no escuro é `0.10` |
+| Barra de botões de **cena** toda afundada e escura | `scene.*` nunca vale `on` — o card acende por estado, cena guarda carimbo de tempo. É o certo para botão de ação; a cor do ícone apagado é **fixa** (`rgba(255,255,255,0.70)`), então quem carrega a cor é o rótulo (`color_off_name`). Papel saliente só apontando para o **switch** que a cena liga |
+| Botão de cena com o ícone errado | só `icon_on` preenchido — num botão de cena quem aparece **sempre** é o `icon_off` |
 | `check-embeds` reprovando N cards por causa de 1 | não evoluir bloco publicado no lugar — marcador novo (ADR 0010) |
 
 Commits: inglês, assinados em GPG, autoria exclusiva do dono, sem coautoria.
