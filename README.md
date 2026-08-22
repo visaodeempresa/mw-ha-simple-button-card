@@ -55,6 +55,9 @@ cards:
 | `haptic` | bool | `true` | vibra ao encostar no botão (pulso curto no toque, mais forte quando o hold vira more-info); `false` desliga. No app companion (iOS/Android) usa o motor de vibração nativo; no navegador comum cai no `navigator.vibrate` — o Safari do iPhone não vibra fora do app |
 | `confirm` | bool | `false` | pergunta antes de ligar/desligar; o hold/more-info não pede nada |
 | `confirm_text` | texto | `Tem certeza que quer {acao} {nome}?` | mensagem da confirmação — `{nome}` vira o label (ou o `friendly_name`) e `{acao}` vira *ligar*/*desligar* conforme o estado |
+| `confirm_3d` | bool | `false` | **balão 3D**: a confirmação vira papel com relevo — o balão *e* os dois botões — em vez do retângulo creme chapado |
+| `confirm_paper_dark` | bool | `false` | balão em papel **escuro** (só com `confirm_3d`); troca a rampa de cores, o brilho do relevo e a tinta do texto |
+| `confirm_paper_color` | `paper` ou `<cor>-<1..7>` | `paper` | cor do papel do balão (só com `confirm_3d`) — mesmas chaves nas duas rampas: `paper` é o creme no claro e o grafite no escuro |
 | `name_position` | `bottom`/`top`/`left`/`right` | `bottom` | posição do label em relação ao ícone |
 | `icon_size` | px | *(vazio)* | vazio = o ícone escala com o botão (igual ao `button-card`); com valor vira caixa fixa (`28`, `"2em"`, `"40%"`) |
 | `name_size` | px | `11` | tamanho do texto do label |
@@ -71,6 +74,39 @@ Saturação baixa de propósito: papel encardido cansa menos a vista que branco
 puro. Fonte canônica da paleta (compartilhada com o
 [power-button-card](https://github.com/visaodeempresa/mw-ha-power-button-card)):
 `IA/lib/paper-palette/paper-palette.js`.
+
+### Balão 3D da confirmação (`confirm_3d`)
+
+Sem ele, a confirmação é um retângulo creme chapado — diálogo de sistema no
+meio de uma tela feita de papel com relevo. Com `confirm_3d: true`, o balão e
+os **dois botões** viram o mesmo papel dos botões MW, e a hierarquia sai do
+próprio relevo, sem cor de alerta:
+
+- **Confirmar** = papel **saliente** (o botão ligado)
+- **Cancelar** = papel **afundado** (o botão desligado)
+
+Pressionar troca os dois de lugar, como papel de verdade.
+
+```yaml
+type: custom:simple-button-card
+entity: light.mesa
+name: MESA
+confirm: true
+confirm_3d: true
+confirm_paper_dark: true      # papel de noite
+confirm_paper_color: blue-5   # a mesma chave serve às duas rampas
+```
+
+`confirm_paper_color` aceita `paper` (creme no claro, grafite no escuro) e as
+49 chaves `<matiz>-<1..7>` da paleta. Virar `confirm_paper_dark` **não**
+invalida a cor escolhida: as duas rampas usam as mesmas chaves, então o mesmo
+`blue-5` existe clara e escura. No editor visual os três campos só aparecem
+quando fazem sentido — `confirm_3d` depois de ligar `confirm`, e a cor/escuro
+depois de ligar `confirm_3d`.
+
+Fontes canônicas: `IA/lib/touch-feedback/touch-feedback-v2.js` (o balão) e
+`IA/lib/paper-palette` + `IA/lib/paper-dark-palette` (as duas rampas).
+Bancada para ver as variantes lado a lado, sem HA: `tools/bench-confirm.html`.
 
 O layout (padding, grade ícone/nome, escala do ícone) é o mesmo do
 `custom:button-card` em modo vertical, então os dois botões ficam idênticos

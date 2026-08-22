@@ -1,0 +1,46 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Balão 3D — bancada</title>
+<style>
+  body{margin:0;padding:24px;background:#111;color:#ddd;font:14px/1.4 -apple-system,system-ui,sans-serif;}
+  h1{font-size:16px;font-weight:600;margin:0 0 20px;letter-spacing:.04em;}
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(320px,1fr));gap:26px;}
+  .cel{background:#1b1b1b;border:1px solid #2c2c2c;border-radius:10px;padding:14px;}
+  .cap{font-size:12px;opacity:.65;margin-bottom:10px;letter-spacing:.05em;text-transform:uppercase;}
+</style></head><body>
+<h1>custom:simple-button-card — confirm_3d</h1>
+<div class="grid" id="g"></div>
+<script>
+  // o card espera um HA por perto; aqui só precisamos do que ele toca
+  window.customCards = [];
+</script>
+<script src="../dist/simple-button-card.js"></script>
+<script>
+(async () => {
+  const VAR = [
+    ["confirm_3d: false — como era (v1)", {}],
+    ["confirm_3d: true — papel creme", {confirm_3d:true}],
+    ["confirm_3d: true · papel claro amarelo tom 6", {confirm_3d:true, confirm_paper_color:"yellow-6"}],
+    ["confirm_3d: true · papel ESCURO azul tom 5", {confirm_3d:true, confirm_paper_dark:true, confirm_paper_color:"blue-5"}],
+    ["confirm_3d: true · papel claro violeta tom 2", {confirm_3d:true, confirm_paper_color:"violet-2"}],
+    ["confirm_3d: true · papel ESCURO verde tom 7", {confirm_3d:true, confirm_paper_dark:true, confirm_paper_color:"green-7"}],
+  ];
+  const g = document.getElementById("g");
+  for (const [cap, cfg] of VAR) {
+    const cel = document.createElement("div");
+    cel.className = "cel";
+    cel.innerHTML = `<div class="cap">${cap}</div>`;
+    g.appendChild(cel);
+
+    const card = document.createElement("simple-button-card");
+    card.setConfig({entity:"light.mesa", name:"MESA", confirm:true, ...cfg});
+    card.hass = {states:{"light.mesa":{state:"on",attributes:{friendly_name:"💡 MESA"}}}, callService(){}};
+    card.shadowRoot.querySelector("ha-card").dispatchEvent(new PointerEvent("pointerup"));
+    await new Promise(r => setTimeout(r, 30));
+
+    // o diálogo nasce fixo em cima de tudo; aqui ele vira um bloco na célula
+    const host = [...document.body.children].find(n => n.shadowRoot && n.shadowRoot.querySelector(".ov"));
+    const ov = host.shadowRoot.querySelector(".ov");
+    ov.style.position = "static"; ov.style.background = "transparent"; ov.style.padding = "0";
+    cel.appendChild(host);
+  }
+})();
+</script></body></html>
