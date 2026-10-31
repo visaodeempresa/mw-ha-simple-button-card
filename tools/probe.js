@@ -129,6 +129,24 @@ if (loaded) {
         const html2 = inst.shadowRoot.innerHTML;
         check("laranja encardido intacto depois do grafite",
           html2.includes("hsl(27, 24%, 85%)") && html2.includes("inset 2px 2px 4px rgba(255,250,235,0.80)"));
+        /* filete v1: camada própria — bg, sombra e borda passam ao largo. */
+        inst.setConfig({ entity: "light.x", trim: "gold" });
+        inst.hass = { states: { "light.x": { state: "on", attributes: {} } } };
+        const html3 = inst.shadowRoot.innerHTML;
+        check("filete ouro: anel na cor do material",
+          html3.includes('class="trim"') && html3.includes("#d4af37"));
+        check("filete não mexe na sombra do botão",
+          html3.includes("inset 2px 2px 4px rgba(255,250,235,0.80)"));
+        inst.setConfig({ entity: "light.x", trim: "ruby", trim_animate: true });
+        inst.hass = { states: { "light.x": { state: "off", attributes: {} } } };
+        const html4 = inst.shadowRoot.innerHTML;
+        check("filete vale desligado e anima só opacity",
+          html4.includes('class="trim glow"') && html4.includes("#c81e3a")
+          && html4.includes("@keyframes sbc-trim-glow"));
+        inst.setConfig({ entity: "light.x" });
+        inst.hass = { states: { "light.x": { state: "on", attributes: {} } } };
+        check("sem filete por padrão",
+          !inst.shadowRoot.innerHTML.includes('class="trim'));
       } catch (e) { check("bloco grafite do botão", false, e.message); }
     }
   }
