@@ -19,6 +19,11 @@ JS puro + `<ha-form>`. Instala por HACS, tipo Dashboard.
   - `>>> paper-dark-palette v1` → `IA/lib/paper-dark-palette/` (a rampa
     escura; **mesmas chaves** da clara, então trocar de rampa não invalida o
     `blue-5` já escolhido)
+  - `>>> paper-grafite-palette v1` → `IA/lib/paper-grafite-palette/` (7 tons
+    absolutos de noite, `grafite-1..7`; tinta creme e relevo de noite
+    automáticos no botão ON quando o dono não fixou cor)
+  - `>>> filete v1` → bloco local do filete (`TRIMS` + `trimOptions()`):
+    filete metálico no perímetro, camada própria que não toca em bg/sombra
   - `>>> touch-feedback v2` → `IA/lib/touch-feedback/touch-feedback-v2.js`
     (vibração `haptic()` + diálogo `confirmAction()` com o **balão 3D**). Não
     depende de nada do card: os valores de reserva moram dentro do bloco. O
@@ -127,6 +132,8 @@ sincroniza sozinho e mexer antes cria divergência.
 | "Mergeei e a feature não apareceu na release" | commits empurrados para a branch depois do merge do PR — órfãos, sem PR | branch nova a cada lote |
 | Ícone destoando dos vizinhos | tamanho fixo em px em vez de escalar com a célula |
 | Campo aparece no editor mas a tela não muda | valor não foi gravado no YAML (card aninhado fundo no `mw-tab-card`, ou dashboard não salvo) — conferir a config salva, não o editor |
+| Tinta automática que nunca dispara | `setConfig` mescla `{...DEFAULTS, ...config}`, então a chave nunca vem vazia e `c.cor || auto` é morto — comparar COM o default (`!== DEFAULTS.cor`) |
+| Filete some com `trim[1]` direto no CSS | sem filete, `trim` é `null` e a interpolação quebra o render — `trimColor` com reserva `"transparent"` |
 | Botão do balão 3D sumindo dentro do balão | balão e botão são o mesmo papel: relevo sozinho não separa, falta a camada de tinta (`linear-gradient(cor,cor), ${bg}`) — e os valores claro/escuro **não** são simétricos |
 | Balão escuro com "risco de giz" na borda de cima | `inset` de `rgba(255,250,235,0.80)` copiado do papel claro; no escuro é `0.10` |
 | Barra de botões de **cena** toda afundada e escura | `scene.*` nunca vale `on` — o card acende por estado, cena guarda carimbo de tempo. É o certo para botão de ação; a cor do ícone apagado é **fixa** (`rgba(255,255,255,0.70)`), então quem carrega a cor é o rótulo (`color_off_name`). Papel saliente só apontando para o **switch** que a cena liga |
