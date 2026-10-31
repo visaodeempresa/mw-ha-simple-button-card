@@ -27,6 +27,8 @@
     name_gap: 0,
     hide_label: false,
     paper_color: "paper",
+    trim: "none",
+    trim_animate: false,
     color_on_name: "#1a1a1a",
     color_off_name: "rgba(255, 255, 255, 0.78)",
     color_off_bg: "rgba(0, 0, 0, 0.45)",
@@ -98,6 +100,26 @@
     label: `Grafite · tom ${i + 1}${i === 0 ? " (mais claro)" : i === 6 ? " (mais encardido)" : ""}`,
   }));
   // <<< paper-grafite-palette v1
+
+  // >>> filete v1 — filete metálico/de gema no perímetro do botão.
+  // Camada própria (div.trim absoluta, só borda + opacity): o bg, a sombra,
+  // a borda de estado e a tinta passam ao largo. A animação é só opacity
+  // (regra global dos cards: transform e opacity, nunca box-shadow/filter).
+  const TRIMS = {
+    none: null,
+    gold: ["Ouro", "#d4af37"],
+    silver: ["Prata", "#c8ccd0"],
+    bronze: ["Bronze", "#b08d57"],
+    diamond: ["Diamante", "#cfe6f2"],
+    emerald: ["Esmeralda", "#3fb96f"],
+    ruby: ["Rubi", "#c81e3a"],
+    rose: ["Quartzo rosa", "#f0a6b8"],
+    topaz: ["Topázio", "#f0a832"],
+  };
+  const trimOptions = () => Object.entries(TRIMS).map(([value, t]) => ({
+    value, label: t ? t[0] : "Sem filete",
+  }));
+  // <<< filete v1
   // roteador da linha grafite: a opção nova toma o lugar só quando pedida.
   const paperBgOf = (key) => isGrafite(key) ? grafiteGradient(key) : paperGradient(key);
 
@@ -374,6 +396,12 @@
         ? "0 0 2px rgba(200,0,0,1.0), 0 0 8px rgba(220,0,0,0.95), 0 0 18px rgba(200,0,0,0.80)"
         : "none";
 
+      // filete: cor do material, ou sem nada. Vale ligado E desligado —
+      // é decoração de perímetro, não sinal de estado.
+      const trim = TRIMS[c.trim] || null;
+      const trimGlow = trim && c.trim_animate === true;
+      const trimColor = trim ? trim[1] : "transparent";
+
       if (!this.shadowRoot) this.attachShadow({ mode: "open" });
       // Geometria copiada do custom:button-card (padding 4% 0, grid vertical
       // 1fr/min-content, ícone escalando com a célula) para os dois botões
@@ -381,7 +409,7 @@
       this.shadowRoot.innerHTML = `
         <style>
           @keyframes sbc-spin{from{transform:rotate(0deg) translateZ(0);}to{transform:rotate(360deg) translateZ(0);}}
-          ha-card{aspect-ratio:1/1;border-radius:12px;background:${bg};border:1px solid ${border};
+          ha-card{position:relative;aspect-ratio:1/1;border-radius:12px;background:${bg};border:1px solid ${border};
             box-shadow:${shadow};color:${nameColor};font-size:11px;font-weight:600;
             cursor:${canControl ? "pointer" : "default"};
             display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -401,8 +429,13 @@
           .nm{grid-area:n;max-width:100%;align-self:center;justify-self:center;
             font-size:${nameSize};font-weight:600;${layout.edge}color:${nameColor};
             text-decoration:${nameDeco};text-shadow:${nameShadow};}
+          .trim{position:absolute;inset:2px;border:2px solid ${trimColor};
+            border-radius:9px;pointer-events:none;}
+          .trim.glow{animation:sbc-trim-glow 3.6s ease-in-out infinite;}
+          @keyframes sbc-trim-glow{0%,100%{opacity:.35}50%{opacity:.95}}
         </style>
-        <ha-card>
+        <ha-card>${trim ? `
+          <div class="trim${trimGlow ? " glow" : ""}"></div>` : ""}
           <div class="ct">
             <div class="ic"><ha-icon icon="${esc(icon)}"></ha-icon></div>
             ${bare ? "" : `<div class="nm">${esc(c.name || (st?.attributes?.friendly_name ?? c.entity))}</div>`}
@@ -468,6 +501,8 @@
     confirm_paper_color: "Cor do papel do balão",
     hide_label: "Esconder o label (só o ícone, centralizado)",
     paper_color: "Cor do papel (ligado)",
+    trim: "Filete no perímetro (ouro, prata, bronze…)",
+    trim_animate: "Brilho discreto animado no filete",
     name_position: "Posição do label",
     icon_size: "Tamanho do ícone (vazio = automático)",
     name_size: "Tamanho do texto do label",
@@ -540,6 +575,8 @@
           ] : []),
         ] : []),
         { name: "paper_color", selector: { select: { mode: "dropdown", options: paperOptions().concat(grafiteOptions()) } } },
+        { name: "trim", selector: { select: { mode: "dropdown", options: trimOptions() } } },
+        { name: "trim_animate", selector: { boolean: {} } },
         { name: "hide_label", selector: { boolean: {} } },
         { name: "icon_size", selector: { number: { min: 8, max: 200, step: 1, mode: "box", unit_of_measurement: "px" } } },
         ...labelFields,
@@ -637,5 +674,5 @@
     documentationURL: "https://github.com/visaodeempresa/mw-ha-simple-button-card",
   });
 
-  console.info("%c MW-SIMPLE-BUTTON-CARD %c 0.8.0 ", "background:#1a1a1a;color:#fdfaf3;font-weight:700;", "background:#e8e3d8;color:#1a1a1a;font-weight:700;");
+  console.info("%c MW-SIMPLE-BUTTON-CARD %c 0.9.0 ", "background:#1a1a1a;color:#fdfaf3;font-weight:700;", "background:#e8e3d8;color:#1a1a1a;font-weight:700;");
 })();
