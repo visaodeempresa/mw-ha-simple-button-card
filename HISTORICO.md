@@ -1,5 +1,23 @@
 # HISTÓRICO — mw-ha-simple-button-card
 
+## 2026-10-31 — filete metálico no perímetro (`trim` + `trim_animate`, v0.9.0)
+- 8 materiais (ouro, prata, bronze, diamante, esmeralda, rubi, quartzo rosa,
+  topázio) + sem filete (padrão). Camada própria: `div.trim` absoluta com
+  `inset`/`border`/`border-radius` próprios e `pointer-events:none` — bg,
+  sombra, borda de estado e tinta passam ao largo.
+- `trim_animate` pulsa só `opacity` (0.35↔0.95 em 3,6 s), o que a regra de
+  animação dos cards permite. Vale ligado e desligado (decoração, não estado).
+- Armadilha: o CSS interpolava `trim[1]` mesmo sem filete — `trimColor` com
+  reserva `"transparent"` (probe cobre: ouro, rubi animado desligado, padrão
+  sem filete).
+
+## 2026-10-31 — linha GRAFITE de papel (v0.8.0)
+- `grafite-1..7` (`paper-grafite-palette v1` embutido, paletas v1 intactas).
+  Botão ON: `paperBgOf()`, tinta creme automática quando `color_on_name` é o
+  default (compara COM o default — o card mescla `{...DEFAULTS, ...config}`),
+  relevo de noite no lugar do branco-quente. Balão de confirmação também
+  roteia grafite. Opção appendada no editor.
+
 ## 2026-08-22 — balão 3D da confirmação (`confirm_3d`)
 - O `confirm` desenhava um retângulo creme chapado no meio de uma tela feita de
   papel com relevo — parecia diálogo de sistema, não a casa. Com
