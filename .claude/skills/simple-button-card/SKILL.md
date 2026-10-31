@@ -16,10 +16,18 @@ JS puro + `<ha-form>`. Instala por HACS, tipo Dashboard.
   re-embutir nos dois cards; validar com `IA/tools/check-embeds.sh` antes de
   commitar:
   - `>>> paper-palette v1` → `IA/lib/paper-palette/`
-  - `>>> touch-feedback v1` → `IA/lib/touch-feedback/` (vibração `haptic()` +
-    diálogo `confirmAction()`). Não depende de nada do card: o texto de
-    reserva mora dentro do bloco. O card só precisa oferecer as chaves
-    `haptic`, `confirm` e `confirm_text` no `DEFAULTS`/editor.
+  - `>>> paper-dark-palette v1` → `IA/lib/paper-dark-palette/` (a rampa
+    escura; **mesmas chaves** da clara, então trocar de rampa não invalida o
+    `blue-5` já escolhido)
+  - `>>> touch-feedback v2` → `IA/lib/touch-feedback/touch-feedback-v2.js`
+    (vibração `haptic()` + diálogo `confirmAction()` com o **balão 3D**). Não
+    depende de nada do card: os valores de reserva moram dentro do bloco. O
+    card oferece `haptic`, `confirm`, `confirm_text`, `confirm_3d`,
+    `confirm_paper_dark` e `confirm_paper_color` no `DEFAULTS`/editor, e
+    **quem escolhe a cor é o card** — passa `bg`/`ink` prontos para o bloco.
+    O `power-button-card` ficou no `v1`, congelado (ADR 0010): bloco embutido
+    publicado não muda mais, evolução ganha marcador novo. Migrar é só trocar
+    o bloco — a assinatura sem o 4º argumento desenha o diálogo de antes.
 - `LAYOUT` — grade por posição do label; `hide_label` colapsa para `'i'`.
 - `_render()` — monta CSS + HTML no shadow root e religa tap/hold.
 - `LABELS` + `_schema()` — editor visual; `_schema()` é dinâmico (esconde os
@@ -38,6 +46,20 @@ Reler quando desconfiar:
 ```bash
 curl -s http://192.168.1.71:8123/hacsfiles/button-card/button-card.js > /tmp/bc.js
 ```
+
+## Bancada: ver o balão sem HA
+
+`tools/bench-confirm.html` monta as 6 variantes de `confirm_3d` lado a lado.
+**Não abre por `file://`** — o pane de browser serve arquivo de fora do projeto
+como *snapshot* `data:`, e aí o `<script src="../dist/...">` não carrega.
+Servir por HTTP (entrada `mw-simple-button-bancada` no
+`PROJECTS/.claude/launch.json`, porta 8794) e abrir
+`http://localhost:8794/tools/bench-confirm.html`.
+
+Para conferir **no destino** em vez do `dist/` local, é a mesma página com o
+`src` apontando para `http://192.168.1.71:8123/hacsfiles/...` — o navegador
+carrega script de outra origem sem CORS, então roda o arquivo que o HA entrega
+de verdade.
 
 ## Verificar sem browser
 
@@ -58,6 +80,36 @@ curl -s http://192.168.1.71:8123/hacsfiles/mw-ha-simple-button-card/simple-butto
 **Subir o `.js.gz` junto não é opcional** — existindo, é ele que o servidor
 entrega. Depois, hard refresh (⌘⇧R): o `?hacstag=` é fixo por versão.
 
+## Propriedade nova "não faz nada" na tela do HA
+
+Antes de suspeitar do card, **leia a configuração salva** — o editor visual
+mostrar o campo prova só que o JS novo carregou, não que o valor foi gravado:
+
+```bash
+python3 - <<'EOF'
+import json, asyncio, websockets, os
+async def main():
+    async with websockets.connect("ws://192.168.1.71:8123/api/websocket", max_size=None) as ws:
+        await ws.recv()
+        await ws.send(json.dumps({"type":"auth","access_token":os.environ["HA_TOKEN"]})); await ws.recv()
+        await ws.send(json.dumps({"id":1,"type":"lovelace/config","url_path":"<dashboard>"}))
+        print(json.dumps(json.loads(await ws.recv())["result"]).count("<chave_nova>"))
+asyncio.run(main())
+EOF
+```
+
+Zero = o valor nunca chegou ao YAML, e o card está certo. Aconteceu em
+22/08/2026 com `confirm_3d` em `/escritorio-5-0`: os botões da ILUMINAÇÃO
+estão **três níveis fundo** — `custom:mw-tab-card` → `grid` →
+`custom:simple-button-card` — e nessa profundidade a cadeia de
+`hui-card-element-editor` do HA é frágil. O editor deste card emite certo
+(conferido isolado no probe); a perda é acima dele, ou o dashboard não chegou
+a ser salvo. **Não isolei qual dos dois.**
+
+Caminho confiável nessa profundidade: gravar por WebSocket
+(`lovelace/config/save`) e reler para provar — é o mesmo regime dos outros
+dashboards da casa. Fazer backup do `lovelace/config` antes.
+
 ## Release
 
 Feature branch → PR → **merge é do dono** → `auto-release.yml` (só dispara em
@@ -74,5 +126,11 @@ sincroniza sozinho e mexer antes cria divergência.
 | YAML com `chave: null` | campo limpo do editor voltando `undefined` — filtrar em `_onChange` |
 | "Mergeei e a feature não apareceu na release" | commits empurrados para a branch depois do merge do PR — órfãos, sem PR | branch nova a cada lote |
 | Ícone destoando dos vizinhos | tamanho fixo em px em vez de escalar com a célula |
+| Campo aparece no editor mas a tela não muda | valor não foi gravado no YAML (card aninhado fundo no `mw-tab-card`, ou dashboard não salvo) — conferir a config salva, não o editor |
+| Botão do balão 3D sumindo dentro do balão | balão e botão são o mesmo papel: relevo sozinho não separa, falta a camada de tinta (`linear-gradient(cor,cor), ${bg}`) — e os valores claro/escuro **não** são simétricos |
+| Balão escuro com "risco de giz" na borda de cima | `inset` de `rgba(255,250,235,0.80)` copiado do papel claro; no escuro é `0.10` |
+| Barra de botões de **cena** toda afundada e escura | `scene.*` nunca vale `on` — o card acende por estado, cena guarda carimbo de tempo. É o certo para botão de ação; a cor do ícone apagado é **fixa** (`rgba(255,255,255,0.70)`), então quem carrega a cor é o rótulo (`color_off_name`). Papel saliente só apontando para o **switch** que a cena liga |
+| Botão de cena com o ícone errado | só `icon_on` preenchido — num botão de cena quem aparece **sempre** é o `icon_off` |
+| `check-embeds` reprovando N cards por causa de 1 | não evoluir bloco publicado no lugar — marcador novo (ADR 0010) |
 
 Commits: inglês, assinados em GPG, autoria exclusiva do dono, sem coautoria.
