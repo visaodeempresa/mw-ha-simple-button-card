@@ -70,6 +70,37 @@
     }))));
   // <<< paper-palette v1
 
+
+  // >>> paper-grafite-palette v1 — fonte canônica: /Volumes/SSD-T1-01/CLAUDE-SSD/IA/lib/paper-grafite-palette/paper-grafite-palette.js
+  // 7 tons de grafite (1 = mais claro, 7 = mais encardido). Matiz 30° da
+  // casa, saturação 6–13%: neutro de propósito — grafite não é colorido.
+  // A saturação sobe devagar com a escuridão, mas JAMAIS alcança a escala
+  // das matizes encardidas (que sobe a 28%): a linha grafite é neutra.
+  const GRAFITE_HUE = 30;
+  const GRAFITE_TONES = [[26, 6], [22, 7], [19, 8], [16, 9], [13, 10], [10, 12], [8, 13]];
+  const GRAFITE_DEFAULT = "linear-gradient(145deg, #2b2825, #161411)";
+  const GRAFITE_INK = "rgba(247, 244, 236, 0.94)";
+  const isGrafite = (key) => /^grafite-[1-7]$/.test(String(key || "").trim());
+  const grafiteGradient = (key) => {
+    const m = isGrafite(key) && /^grafite-([1-7])$/.exec(String(key).trim());
+    if (!m) return GRAFITE_DEFAULT;
+    const [l, s] = GRAFITE_TONES[+m[1] - 1];
+    return `linear-gradient(145deg, hsl(${GRAFITE_HUE}, ${s}%, ${l}%), hsl(${GRAFITE_HUE}, ${s + 4}%, ${Math.max(4, l - 6)}%))`;
+  };
+  const grafiteStops = (key) => {
+    const m = isGrafite(key) && /^grafite-([1-7])$/.exec(String(key).trim());
+    if (!m) return ["#2b2825", "#161411"];
+    const [l, s] = GRAFITE_TONES[+m[1] - 1];
+    return [`hsl(${GRAFITE_HUE}, ${s}%, ${l}%)`, `hsl(${GRAFITE_HUE}, ${s + 4}%, ${Math.max(4, l - 6)}%)`];
+  };
+  const grafiteOptions = () => GRAFITE_TONES.map((t, i) => ({
+    value: `grafite-${i + 1}`,
+    label: `Grafite · tom ${i + 1}${i === 0 ? " (mais claro)" : i === 6 ? " (mais encardido)" : ""}`,
+  }));
+  // <<< paper-grafite-palette v1
+  // roteador da linha grafite: a opção nova toma o lugar só quando pedida.
+  const paperBgOf = (key) => isGrafite(key) ? grafiteGradient(key) : paperGradient(key);
+
   // >>> paper-dark-palette v1 — fonte canônica: /Volumes/SSD-T1-01/CLAUDE-SSD/IA/lib/paper-dark-palette/paper-dark-palette.js
   // 49 papéis de noite: as mesmas 7 matizes do paper-palette v1 × 7 tons
   // (1 = papel escuro mais claro, 7 = mais encardido). A saturação sobe mais
@@ -284,17 +315,27 @@
       const isOn = state === "on";
       const dead = state === "unavailable" || state === "unknown";
 
-      const bg = isOn ? paperGradient(c.paper_color) : c.color_off_bg;
+      const graf = isGrafite(c.paper_color);
+      const bg = isOn ? paperBgOf(c.paper_color) : c.color_off_bg;
       const border = isOn ? c.color_on_border : c.color_off_border;
+      // grafite: mesmo relevo, respiro de noite — o branco quente do papel
+      // claro viraria holofote no papel escuro.
       const shadow = isOn
-        ? "0 0 8px 2px rgba(0,0,0,0.28), 0 4px 10px rgba(0,0,0,0.14), inset 2px 2px 4px rgba(255,250,235,0.80), inset -2px -2px 4px rgba(0,0,0,0.08)"
+        ? ("0 0 8px 2px rgba(0,0,0,0.28), 0 4px 10px rgba(0,0,0,0.14),"
+          + (graf ? " inset 2px 2px 4px rgba(255,255,255,0.06), inset -2px -2px 4px rgba(0,0,0,0.45)"
+                   : " inset 2px 2px 4px rgba(255,250,235,0.80), inset -2px -2px 4px rgba(0,0,0,0.08)"))
         : "inset 2px 2px 5px rgba(0,0,0,0.35), inset -1px -1px 3px rgba(255,255,255,0.04)";
 
       const icon = dead ? c.icon_unavailable
         : !isOn ? c.icon_off
         : (c.icon_on || st?.attributes?.icon || "mdi:lightbulb");
 
-      const iconColor = dead ? c.color_unavail : isOn ? c.color_on_name : "rgba(255,255,255,0.70)";
+      // grafite: tinta creme automática quando o dono não fixou cor —
+      // o card mescla {...DEFAULTS, ...config}, então comparamos COM o default.
+      const onName = c.color_on_name !== DEFAULTS.color_on_name
+        ? c.color_on_name
+        : (graf ? GRAFITE_INK : DEFAULTS.color_on_name);
+      const iconColor = dead ? c.color_unavail : isOn ? onName : "rgba(255,255,255,0.70)";
       // icon_shadow=false remove a sombra decorativa do ícone; o brilho vermelho
       // de "indisponível" fica (é sinal de estado, não enfeite).
       const iconFilter = dead
@@ -327,7 +368,7 @@
         : `position:absolute;width:100%;height:100%;max-height:100%;
             --mdc-icon-size:100%;--iron-icon-width:100%;--iron-icon-height:100%;`;
 
-      const nameColor = dead ? c.color_unavail : isOn ? c.color_on_name : c.color_off_name;
+      const nameColor = dead ? c.color_unavail : isOn ? onName : c.color_off_name;
       const nameDeco = dead ? "line-through" : "none";
       const nameShadow = dead
         ? "0 0 2px rgba(200,0,0,1.0), 0 0 8px rgba(220,0,0,0.95), 0 0 18px rgba(200,0,0,0.80)"
@@ -398,7 +439,7 @@
           const ok = await confirmAction(c.confirm_text, nome, isOn ? "desligar" : "ligar", {
             paper3d: c.confirm_3d === true,
             dark: cdark,
-            bg: cdark ? paperDarkGradient(c.confirm_paper_color) : paperGradient(c.confirm_paper_color),
+            bg: isGrafite(c.confirm_paper_color) ? grafiteGradient(c.confirm_paper_color) : cdark ? paperDarkGradient(c.confirm_paper_color) : paperGradient(c.confirm_paper_color),
             ink: paperInk(cdark),
           });
           if (!ok) return;
@@ -498,7 +539,7 @@
               options: this._config?.confirm_paper_dark === true ? paperDarkOptions() : paperOptions() } } },
           ] : []),
         ] : []),
-        { name: "paper_color", selector: { select: { mode: "dropdown", options: paperOptions() } } },
+        { name: "paper_color", selector: { select: { mode: "dropdown", options: paperOptions().concat(grafiteOptions()) } } },
         { name: "hide_label", selector: { boolean: {} } },
         { name: "icon_size", selector: { number: { min: 8, max: 200, step: 1, mode: "box", unit_of_measurement: "px" } } },
         ...labelFields,
@@ -596,5 +637,5 @@
     documentationURL: "https://github.com/visaodeempresa/mw-ha-simple-button-card",
   });
 
-  console.info("%c MW-SIMPLE-BUTTON-CARD %c 0.7.0 ", "background:#1a1a1a;color:#fdfaf3;font-weight:700;", "background:#e8e3d8;color:#1a1a1a;font-weight:700;");
+  console.info("%c MW-SIMPLE-BUTTON-CARD %c 0.8.0 ", "background:#1a1a1a;color:#fdfaf3;font-weight:700;", "background:#e8e3d8;color:#1a1a1a;font-weight:700;");
 })();
