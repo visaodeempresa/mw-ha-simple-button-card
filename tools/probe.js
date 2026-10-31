@@ -112,6 +112,24 @@ if (loaded) {
       check("oferece editor visual",
         typeof reg[main].getConfigElement === "function",
         "static getConfigElement() ausente");
+      /* linha grafite (paper-grafite-palette v1): botão ON com papel de
+       * noite, tinta creme automática e relevo de noite — sem tema. */
+      try {
+        inst.setConfig({ entity: "light.x", paper_color: "grafite-4" });
+        inst.hass = { states: { "light.x": { state: "on", attributes: {} } } };
+        const html = inst.shadowRoot.innerHTML;
+        check("botão grafite: gradiente do tom 4",
+          html.includes("linear-gradient(145deg, hsl(30, 9%, 16%), hsl(30, 13%, 10%)"));
+        check("botão grafite: tinta creme automática",
+          html.includes("rgba(247, 244, 236, 0.94)"));
+        check("botão grafite: relevo de noite",
+          html.includes("inset 2px 2px 4px rgba(255,255,255,0.06)"));
+        inst.setConfig({ entity: "light.x", paper_color: "orange-7" });
+        inst.hass = { states: { "light.x": { state: "on", attributes: {} } } };
+        const html2 = inst.shadowRoot.innerHTML;
+        check("laranja encardido intacto depois do grafite",
+          html2.includes("hsl(27, 24%, 85%)") && html2.includes("inset 2px 2px 4px rgba(255,250,235,0.80)"));
+      } catch (e) { check("bloco grafite do botão", false, e.message); }
     }
   }
 

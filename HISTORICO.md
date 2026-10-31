@@ -1,5 +1,36 @@
 # HISTÓRICO — mw-ha-simple-button-card
 
+## 2026-08-22 — balão 3D da confirmação (`confirm_3d`)
+- O `confirm` desenhava um retângulo creme chapado no meio de uma tela feita de
+  papel com relevo — parecia diálogo de sistema, não a casa. Com
+  `confirm_3d: true` o balão **e os dois botões** viram o mesmo papel dos
+  botões MW.
+- Hierarquia pelo relevo, sem cor de alerta: **Confirmar** = papel saliente (o
+  botão ligado), **Cancelar** = papel afundado (o desligado). Pressionar troca
+  os dois de lugar.
+- `confirm_paper_dark` + `confirm_paper_color`: as duas rampas (clara e
+  escura) com as **mesmas** 49 chaves `<matiz>-<1..7>` — virar o interruptor
+  não invalida o `blue-5` já escolhido. `paper-dark-palette v1` passou a ser
+  embutido aqui.
+- `touch-feedback v1` → **`v2`**. O v1 fica congelado no `power-button-card`:
+  bloco embutido publicado não muda mais, evolução ganha marcador novo
+  (ADR 0010 — senão o `check-embeds` reprova N cards por causa de 1). A
+  assinatura é compatível: sem o 4º argumento, `confirmAction()` desenha
+  exatamente o diálogo de antes.
+- Armadilha achada na tela: balão e botão sendo o **mesmo** papel, o relevo
+  sozinho não separa — nos tons encardidos e em todo papel escuro o botão
+  sumia dentro do balão. Conserto sem segunda cor: camada de tinta por cima da
+  folha (`linear-gradient(cor,cor), ${bg}`), com valores **assimétricos** entre
+  claro e escuro. Está em `IA/knowledge/ha-lovelace-cards.md`.
+- Editor mostra os campos só quando fazem sentido: `confirm_3d` depois de
+  ligar `confirm`, cor/escuro depois de ligar `confirm_3d`.
+- Bancada nova `tools/bench-confirm.html` (6 variantes lado a lado, sem HA) —
+  e a mesma página apontando para o `hacsfiles` do HA serviu para conferir
+  **no destino**: `.js` e `.js.gz` byte a byte contra o `dist/`, balão abrindo,
+  Cancelar sem chamar serviço, Confirmar chamando `homeassistant.toggle`,
+  console limpo.
+- PR #10.
+
 ## 2026-07-31 — bloco `touch-feedback v1` (compartilhado)
 - `haptic()` + `confirmAction()` saíram de código solto e viraram bloco entre
   marcadores `>>> touch-feedback v1` / `<<< touch-feedback v1`, mesmo regime da
